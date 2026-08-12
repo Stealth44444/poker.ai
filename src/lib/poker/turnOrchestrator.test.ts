@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { nextActiveSeatAfter, postBlinds } from './turnOrchestrator';
+import { nextActiveSeatAfter, postBlinds, findNextToAct, playUntilHumanOrHandEnd, DecisionFn } from './turnOrchestrator';
 import { createTournament, startHand } from './tournamentEngine';
 import { Player } from './types';
+import { Persona } from './personas';
 
 function makePlayers(count: number, stack = 1000): Player[] {
   return Array.from({ length: count }, (_, i) => ({
@@ -50,5 +51,64 @@ describe('postBlinds', () => {
     const posted = postBlinds(state);
     expect(posted.bets.p0).toBe(25);
     expect(posted.bets.p1).toBe(50);
+  });
+});
+
+describe('findNextToAct', () => {
+  it('returns the player after the action anchor who still owes chips', () => {
+    const state = postBlinds(startHand(createTournament(makePlayers(3, 1000), 25)));
+    expect(findNextToAct(state)).toBe('p0');
+  });
+
+  it('returns null once everyone has matched the bet and acted', () => {
+    const state = postBlinds(startHand(createTournament(makePlayers(2, 1000), 25)));
+    const settled = { ...state, actedThisRound: ['p0', 'p1'], bets: { p0: 50, p1: 50 } };
+    expect(findNextToAct(settled)).toBeNull();
+  });
+});
+
+describe('playUntilHumanOrHandEnd', () => {
+  const persona: Persona = { id: 'p1', name: 'Bot', style: 'loose', description: 'Calls a lot.' };
+  const alwaysCheckOrCall: DecisionFn = async (context) => {
+    if (context.validActions.includes('check')) return { action: 'check' };
+    return { action: 'call' };
+  };
+
+  it('returns immediately without calling the AI when it is already the human turn', async () => {
+    const state = postBlinds(startHand(createTournament(makePlayers(2, 1000), 25)));
+    let called = false;
+    const spyDecisionFn: DecisionFn = async () => {
+      called = true;
+      return { action: 'check' };
+    };
+    const { events } = await playUntilHumanOrHandEnd(state, 'p0', { p1: persona }, spyDecisionFn);
+    expect(events).toEqual([]);
+    expect(called).toBe(false);
+  });
+
+  it('plays AI turns after a human action and stops back at the human on the next street', async () => {
+    const state = postBlinds(startHand(createTournament(makePlayers(2, 1000), 25)));
+    const { state: after, events } = await playUntilHumanOrHandEnd(
+      state,
+      'p0',
+      { p1: persona },
+      alwaysCheckOrCall,
+      { playerId: 'p0', type: 'call' }
+    );
+    expect(after.street).toBe('flop');
+    expect(events.map((e) => e.type)).toEqual(['action', 'action', 'street', 'action']);
+  });
+
+  it('resolves the hand immediately when the human folds', async () => {
+    const state = postBlinds(startHand(createTournament(makePlayers(2, 1000), 25)));
+    const { events } = await playUntilHumanOrHandEnd(
+      state,
+      'p0',
+      { p1: persona },
+      alwaysCheckOrCall,
+      { playerId: 'p0', type: 'fold' }
+    );
+    expect(events[events.length - 1].type).toBe('showdown');
+    expect(events[events.length - 1].potsAwarded?.[0].winnerIds).toEqual(['p1']);
   });
 });
