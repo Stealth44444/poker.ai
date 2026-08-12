@@ -47,7 +47,11 @@ describe('decideAction', () => {
 
   it('falls back when the call takes longer than the timeout', async () => {
     const client: ChatClient = {
-      chat: { completions: { create: vi.fn(() => new Promise(() => {})) } },
+      chat: {
+        completions: {
+          create: vi.fn(() => new Promise<{ choices: { message: { content: string | null } }[] }>(() => {})),
+        },
+      },
     };
     const decision = await decideAction(
       { holeCards: ['2c', '7h'], communityCards: [], pot: 100, toCall: 0, stacks: {}, actionHistory: [], validActions: ['fold', 'check', 'bet', 'all-in'] },
