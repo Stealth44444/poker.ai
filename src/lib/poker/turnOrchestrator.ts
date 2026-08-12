@@ -79,16 +79,26 @@ export async function playUntilHumanOrHandEnd(
   let state = initialState;
 
   const applyAndRecord = (action: PlayerAction, isFallback?: boolean, tableTalk?: string) => {
-    const result = applyAction(state, action);
+    let finalAction = action;
+    let fellBack = isFallback;
+    let result;
+    try {
+      result = applyAction(state, finalAction);
+    } catch {
+      const safeType: ActionType = validActions(state, action.playerId).includes('check') ? 'check' : 'fold';
+      finalAction = { playerId: action.playerId, type: safeType };
+      fellBack = true;
+      result = applyAction(state, finalAction);
+    }
     state = {
       ...state,
       players: result.players,
       currentBet: result.currentBet,
       minRaise: result.minRaise,
       bets: result.bets,
-      actedThisRound: [...state.actedThisRound, action.playerId],
+      actedThisRound: [...state.actedThisRound, finalAction.playerId],
     };
-    events.push({ type: 'action', playerId: action.playerId, action: action.type, amount: action.amount, tableTalk, isFallback });
+    events.push({ type: 'action', playerId: finalAction.playerId, action: finalAction.type, amount: finalAction.amount, tableTalk, isFallback: fellBack });
   };
 
   if (humanAction) {

@@ -35,6 +35,16 @@ describe('decideAction', () => {
     expect(decision).toEqual({ action: 'check', isFallback: true });
   });
 
+  it('falls back when the model raises without providing a positive amount', async () => {
+    const client = makeClient(JSON.stringify({ action: 'raise', amount: null, tableTalk: 'Raise!' }));
+    const decision = await decideAction(
+      { holeCards: ['Ad', 'Kd'], communityCards: [], pot: 100, toCall: 0, stacks: {}, actionHistory: [], validActions: ['fold', 'check', 'raise', 'all-in'] },
+      persona,
+      { client }
+    );
+    expect(decision).toEqual({ action: 'check', isFallback: true });
+  });
+
   it('falls back to fold when check is not available and the API errors', async () => {
     const client: ChatClient = { chat: { completions: { create: vi.fn().mockRejectedValue(new Error('network down')) } } };
     const decision = await decideAction(

@@ -87,6 +87,10 @@ Pick one valid action. If betting or raising, set amount to the total chips you 
     if (!context.validActions.includes(parsed.action as ActionType)) {
       return safeFallback(context);
     }
+    const needsAmount = parsed.action === 'bet' || parsed.action === 'raise';
+    if (needsAmount && (typeof parsed.amount !== 'number' || parsed.amount <= 0)) {
+      return safeFallback(context);
+    }
 
     return {
       action: parsed.action as ActionType,
