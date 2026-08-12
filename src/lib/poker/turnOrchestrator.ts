@@ -135,12 +135,17 @@ export async function playUntilHumanOrHandEnd(
     const player = state.players.find((p) => p.id === nextId)!;
     const persona = personasById[nextId];
     const pot = Object.values(state.bets).reduce((sum, b) => sum + b, 0);
+    const committed = state.bets[nextId] ?? 0;
+    const minBetOrRaiseAmount = state.currentBet === 0 ? state.minRaise : state.currentBet + state.minRaise;
+    const maxBetOrRaiseAmount = committed + player.stack;
     const decision = await decisionFn(
       {
         holeCards: player.holeCards,
         communityCards: state.communityCards,
         pot,
-        toCall: state.currentBet - (state.bets[nextId] ?? 0),
+        toCall: state.currentBet - committed,
+        minBetOrRaiseAmount,
+        maxBetOrRaiseAmount,
         stacks: Object.fromEntries(state.players.map((p) => [p.id, p.stack])),
         actionHistory: events
           .filter((e) => e.type === 'action')

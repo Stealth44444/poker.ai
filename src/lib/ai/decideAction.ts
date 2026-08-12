@@ -7,6 +7,8 @@ export interface DecisionContext {
   communityCards: Card[];
   pot: number;
   toCall: number;
+  minBetOrRaiseAmount: number;
+  maxBetOrRaiseAmount: number;
   stacks: Record<string, number>;
   actionHistory: string[];
   validActions: ActionType[];
@@ -68,7 +70,7 @@ Hole cards: ${context.holeCards.join(' ')}
 Community cards: ${context.communityCards.join(' ') || '(none)'}
 Pot: ${context.pot}. Amount to call: ${context.toCall}.
 Valid actions: ${context.validActions.join(', ')}.
-Pick one valid action. If betting or raising, set amount to the total chips you are putting in front of you this street.`;
+Pick one valid action. If betting or raising, "amount" must be the TOTAL chips you have in front of you this street (not just the extra chips added), and must be between ${context.minBetOrRaiseAmount} and ${context.maxBetOrRaiseAmount} inclusive.`;
 
   try {
     const response = await Promise.race([
