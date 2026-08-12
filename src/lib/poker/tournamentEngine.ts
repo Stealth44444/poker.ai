@@ -14,6 +14,10 @@ export interface TournamentState {
   handNumber: number;
   handsPerBlindLevel: number;
   bets: Record<string, number>;
+  currentBet: number;
+  minRaise: number;
+  actedThisRound: string[];
+  actionAnchorSeat: number;
 }
 
 export function createTournament(players: Player[], startingSmallBlind = 25, handsPerBlindLevel = 10): TournamentState {
@@ -28,10 +32,25 @@ export function createTournament(players: Player[], startingSmallBlind = 25, han
     handNumber: 0,
     handsPerBlindLevel,
     bets: {},
+    currentBet: 0,
+    minRaise: startingSmallBlind * 2,
+    actedThisRound: [],
+    actionAnchorSeat: 0,
   };
 }
 
+function nextActiveSeat(players: Player[], fromSeat: number): number {
+  const n = players.length;
+  for (let i = 1; i <= n; i++) {
+    const seat = (fromSeat + i) % n;
+    const player = players.find((p) => p.seat === seat);
+    if (player && player.stack > 0) return seat;
+  }
+  return fromSeat;
+}
+
 export function startHand(state: TournamentState): TournamentState {
+  const dealerSeat = state.handNumber === 0 ? state.dealerSeat : nextActiveSeat(state.players, state.dealerSeat);
   const deck = shuffle(createDeck());
   let remaining = deck;
   const players = state.players.map((p) => {
@@ -44,6 +63,7 @@ export function startHand(state: TournamentState): TournamentState {
   const handNumber = state.handNumber + 1;
   const shouldRaiseBlinds = state.handNumber > 0 && handNumber % state.handsPerBlindLevel === 1;
   const smallBlind = shouldRaiseBlinds ? state.smallBlind * 2 : state.smallBlind;
+  const bigBlind = smallBlind * 2;
 
   return {
     ...state,
@@ -53,8 +73,13 @@ export function startHand(state: TournamentState): TournamentState {
     street: 'preflop',
     handNumber,
     smallBlind,
-    bigBlind: smallBlind * 2,
+    bigBlind,
     bets: {},
+    dealerSeat,
+    currentBet: 0,
+    minRaise: bigBlind,
+    actedThisRound: [],
+    actionAnchorSeat: dealerSeat,
   };
 }
 
@@ -74,6 +99,10 @@ export function advanceStreet(state: TournamentState): TournamentState {
     street: NEXT_STREET[state.street],
     communityCards: [...state.communityCards, ...drawn],
     deck: remaining,
+    currentBet: 0,
+    minRaise: state.bigBlind,
+    actedThisRound: [],
+    actionAnchorSeat: state.dealerSeat,
   };
 }
 

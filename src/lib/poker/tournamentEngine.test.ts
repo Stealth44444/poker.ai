@@ -31,6 +31,20 @@ describe('startHand', () => {
     expect(tournament.handNumber).toBe(3);
     expect(tournament.smallBlind).toBe(50);
   });
+
+  it('rotates the dealer button each hand', () => {
+    let tournament = createTournament(makePlayers(3));
+    tournament = startHand(tournament);
+    expect(tournament.dealerSeat).toBe(0);
+    tournament = startHand(tournament);
+    expect(tournament.dealerSeat).toBe(1);
+  });
+
+  it('resets betting round fields for the new hand', () => {
+    const hand = startHand(createTournament(makePlayers(2)));
+    expect(hand.currentBet).toBe(0);
+    expect(hand.actedThisRound).toEqual([]);
+  });
 });
 
 describe('advanceStreet', () => {
@@ -48,6 +62,14 @@ describe('advanceStreet', () => {
     state = advanceStreet(state);
     expect(state.street).toBe('river');
     expect(state.communityCards.length).toBe(5);
+  });
+
+  it('resets currentBet and actedThisRound for the new betting round', () => {
+    let state = startHand(createTournament(makePlayers(2)));
+    state = { ...state, currentBet: 50, actedThisRound: ['p0', 'p1'] };
+    const flop = advanceStreet(state);
+    expect(flop.currentBet).toBe(0);
+    expect(flop.actedThisRound).toEqual([]);
   });
 });
 
