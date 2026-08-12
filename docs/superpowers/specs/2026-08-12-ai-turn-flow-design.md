@@ -24,7 +24,9 @@ Phase 1(`docs/superpowers/specs/2026-08-12-ai-holdem-tournament-design.md`)에�
     액션 히스토리, `validActions()`가 계산한 유효 액션 목록이 담긴다.
   - OpenAI Chat Completions API를 `response_format: { type: 'json_schema',
     strict: true, ... }`로 호출해 `{ action, amount?, tableTalk? }` 형태를
-    강제한다. 모델은 `gpt-4o-mini`.
+    강제한다. 모델은 `gpt-5.6-luna` (OpenAI의 비용 최적화 티어 — 입력
+    $0.20/output $1.20 per MTok, function calling·structured output 지원.
+    핸드당 AI 9명이 여러 번 호출되는 고빈도 워크로드에 적합).
   - 반환된 `action`이 `validActions` 목록에 없으면(모델 오류 대비 이중
     방어) 폴백 처리로 넘어간다.
   - **폴백 규칙:** API 타임아웃(5초)/오류/스키마 불일치 시 — `check`가
