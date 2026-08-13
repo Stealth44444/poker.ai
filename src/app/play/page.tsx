@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { PokerScene, SeatAction } from '@/components/scene/PokerScene';
 import { HoleCardsHUD } from '@/components/scene/HoleCardsHUD';
+import { TableHUD } from '@/components/hud/TableHUD';
 import { useEventPlayback } from '@/hooks/useEventPlayback';
 import { actionLabel, deriveView } from '@/lib/playback/derivePlayback';
 import { TournamentState } from '@/lib/poker/tournamentEngine';
@@ -75,6 +76,13 @@ export default function PlayPage() {
         seatAction={seatAction}
         revealedCount={0}
         winnerIds={[]}
+      />
+      <TableHUD
+        pot={view.pot}
+        street={displayState?.street ?? state.street}
+        handNumber={state.handNumber}
+        smallBlind={state.smallBlind}
+        bigBlind={state.bigBlind}
       />
       {human && <HoleCardsHUD cards={human.holeCards} />}
       {isHumanTurn && (
