@@ -21,9 +21,6 @@ export function PokerScene({ players, communityCards }: { players: Player[]; com
 
   return (
     <Canvas camera={{ fov: 60 }}>
-      <ambientLight intensity={0.7} />
-      <spotLight position={[0, 6, 0]} angle={0.6} penumbra={0.5} intensity={800} color="#fff2d0" castShadow={false} />
-      <pointLight position={[0, 2, 3]} intensity={40} color="#ffe9c4" />
       <LookAroundCamera position={cameraPosition} />
       <Suspense fallback={null}>
         <Room />

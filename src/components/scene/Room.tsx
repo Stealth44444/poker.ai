@@ -11,7 +11,7 @@ export function Room() {
         <planeGeometry args={[40, 40]} />
         <meshStandardMaterial color="#241a14" />
       </mesh>
-      <EnvironmentProp url="/props/drome-bar.glb" position={[0, -0.55, -4]} />
+      <EnvironmentProp url="/props/dalek-ship.glb" position={[0, -0.55, 0]} />
     </>
   );
 }
