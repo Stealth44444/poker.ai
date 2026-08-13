@@ -11,17 +11,21 @@
     "convert-avatar": "node scripts/convert-avatar.js"
   },
   "dependencies": {
+    "@react-three/drei": "^10.7.8",
+    "@react-three/fiber": "^9.7.0",
     "next": "16.3.0",
     "openai": "^7.4.0",
     "pokersolver": "^2.1.4",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "three": "^0.185.1"
   },
   "devDependencies": {
     "@gltf-transform/cli": "^4.4.2",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/three": "^0.185.4",
     "eslint": "^9",
     "eslint-config-next": "16.3.0",
     "fbx2gltf": "^0.9.7-p1",
