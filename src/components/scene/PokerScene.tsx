@@ -5,6 +5,7 @@ import { Canvas } from '@react-three/fiber';
 import { Card, Player } from '@/lib/poker/types';
 import { seatTransform } from '@/lib/scene/seatLayout';
 import { LookAroundCamera } from './LookAroundCamera';
+import { Room } from './Room';
 import { Table } from './Table';
 import { Avatar } from './Avatar';
 import { Card3D } from './Card3D';
@@ -20,9 +21,13 @@ export function PokerScene({ players, communityCards }: { players: Player[]; com
 
   return (
     <Canvas camera={{ fov: 60 }}>
-      <ambientLight intensity={0.6} />
-      <pointLight position={[0, 4, 0]} intensity={40} />
+      <ambientLight intensity={0.7} />
+      <spotLight position={[0, 6, 0]} angle={0.6} penumbra={0.5} intensity={800} color="#fff2d0" castShadow={false} />
+      <pointLight position={[0, 2, 3]} intensity={40} color="#ffe9c4" />
       <LookAroundCamera position={cameraPosition} />
+      <Suspense fallback={null}>
+        <Room />
+      </Suspense>
       <Table />
       <Suspense fallback={null}>
         {players
