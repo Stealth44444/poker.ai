@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { PokerScene, SeatAction } from '@/components/scene/PokerScene';
+import { PokerScene, Payout, SeatAction } from '@/components/scene/PokerScene';
 import { HoleCardsHUD } from '@/components/scene/HoleCardsHUD';
 import { TableHUD } from '@/components/hud/TableHUD';
 import { BetControls } from '@/components/hud/BetControls';
@@ -79,6 +79,10 @@ export default function PlayPage() {
   const isHumanTurn = isDone && !handEnded && validActions.length > 0;
   const turnPlayerId = !isDone ? upcomingActorId : isHumanTurn ? HUMAN_ID : null;
   const winnerIds = showdownEvent?.potsAwarded?.flatMap((award) => award.winnerIds) ?? [];
+  const payouts: Payout[] =
+    showdownEvent?.potsAwarded?.flatMap((award) =>
+      award.winnerIds.map((playerId) => ({ playerId, amount: award.amountPerWinner }))
+    ) ?? [];
 
   const seatAction: SeatAction | null =
     latestEvent?.type === 'action' && latestEvent.playerId
@@ -98,6 +102,7 @@ export default function PlayPage() {
         seatAction={seatAction}
         revealedCount={revealedCount}
         winnerIds={winnerIds}
+        payouts={payouts}
       />
       <TableHUD
         pot={view.pot}

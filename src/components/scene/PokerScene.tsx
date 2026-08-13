@@ -10,8 +10,9 @@ import { Room } from './Room';
 import { Table } from './Table';
 import { Avatar } from './Avatar';
 import { Chair } from './Chair';
-import { Card3D } from './Card3D';
+import { DealtCard } from './DealtCard';
 import { ChipStack } from './ChipStack';
+import { AnimatedGroup } from './AnimatedGroup';
 import { PlayerPlate, TransientText } from './PlayerPlate';
 
 const HUMAN_SEAT = 0;
@@ -28,11 +29,19 @@ const TABLE_TOP_Y = 0.69;
 // Ellipse just inside the felt where each player's hole cards sit.
 const HOLE_CARD_RX = 0.52;
 const HOLE_CARD_RZ = 1.45;
+// Shared point cards visually deal in from and chips fly out of/into —
+// reads as "the dealer/pot", independent of any one seat.
+const TABLE_CENTER: [number, number, number] = [0, TABLE_TOP_Y + 0.01, 0];
 
 export interface SeatAction {
   playerId: string;
   badge: TransientText;
   talk: TransientText | null;
+}
+
+export interface Payout {
+  playerId: string;
+  amount: number;
 }
 
 export function PokerScene({
@@ -42,6 +51,7 @@ export function PokerScene({
   seatAction,
   revealedCount,
   winnerIds,
+  payouts,
 }: {
   view: TableView;
   dealerSeat: number;
@@ -50,6 +60,8 @@ export function PokerScene({
   /** Number of showdown participants (seat order) whose cards are face-up. */
   revealedCount: number;
   winnerIds: string[];
+  /** Chips animate from the table center to each winner's seat once the hand resolves. */
+  payouts: Payout[];
 }) {
   const { players, communityCards, bets } = view;
   const human = players.find((p) => p.seat === HUMAN_SEAT);
@@ -103,7 +115,13 @@ export function PokerScene({
             );
           })}
         {communityCards.map((card, i) => (
-          <Card3D key={card} card={card} position={[i * 0.1 - (communityCards.length - 1) * 0.05, TABLE_TOP_Y + 0.005, 0]} />
+          <DealtCard
+            key={card}
+            card={card}
+            origin={TABLE_CENTER}
+            faceDown={false}
+            position={[i * 0.1 - (communityCards.length - 1) * 0.05, TABLE_TOP_Y + 0.005, 0]}
+          />
         ))}
         {players
           .filter((p) => !p.isFolded && p.holeCards.length > 0)
@@ -117,9 +135,10 @@ export function PokerScene({
             const revealIndex = revealOrder.findIndex((r) => r.id === p.id);
             const faceUp = revealIndex >= 0 && revealIndex < revealedCount;
             return p.holeCards.map((card, i) => (
-              <Card3D
+              <DealtCard
                 key={`${p.id}-${card}`}
                 card={card}
+                origin={TABLE_CENTER}
                 faceDown={!faceUp}
                 position={[cx + tx * (i - 0.5) * 0.09, TABLE_TOP_Y + 0.005, cz + tz * (i - 0.5) * 0.09]}
               />
@@ -134,8 +153,23 @@ export function PokerScene({
             const angle = (p.seat / players.length) * Math.PI * 2;
             const bx = Math.sin(angle) * HOLE_CARD_RX * 0.55;
             const bz = Math.cos(angle) * HOLE_CARD_RZ * 0.62;
-            return <ChipStack key={`bet-chips-${p.id}`} count={bets[p.id]} position={[bx, TABLE_TOP_Y + 0.005, bz]} />;
+            return (
+              <AnimatedGroup key={`bet-chips-${p.id}`} target={[bx, TABLE_TOP_Y + 0.005, bz]} from={humanSeatPos}>
+                <ChipStack count={bets[p.id]} position={[0, 0, 0]} />
+              </AnimatedGroup>
+            );
           })}
+        {payouts.map((award) => {
+          const winner = players.find((p) => p.id === award.playerId);
+          if (!winner) return null;
+          const { position: seatPos } = seatTransform(winner.seat, players.length);
+          const target: [number, number, number] = [seatPos[0] * 0.55, TABLE_TOP_Y + 0.01, seatPos[2] * 0.55];
+          return (
+            <AnimatedGroup key={`payout-${award.playerId}`} target={target} from={TABLE_CENTER} lambda={3.2}>
+              <ChipStack count={award.amount} position={[0, 0, 0]} />
+            </AnimatedGroup>
+          );
+        })}
         {human && human.stack > 0 && (
           <ChipStack count={human.stack} position={[humanSeatPos[0] * 0.52 - 0.3, TABLE_TOP_Y, humanSeatPos[2] * 0.52]} />
         )}

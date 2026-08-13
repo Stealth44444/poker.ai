@@ -19,6 +19,7 @@ export function Card3D({
   position,
   rotation = [0, 0, 0],
   faceDown = false,
+  flipProgress,
   flat = true,
   scale = 1,
 }: {
@@ -26,6 +27,9 @@ export function Card3D({
   position: [number, number, number];
   rotation?: [number, number, number];
   faceDown?: boolean;
+  /** 0 = face-down angle, 1 = face-up angle. Overrides the `faceDown` snap
+   *  with a continuous angle when provided, for an animated flip reveal. */
+  flipProgress?: number;
   /** true (default) lays the card on the table; false keeps it upright facing +Z for HUD use. */
   flat?: boolean;
   /** 1 = the asset's native, roughly real-world card size (0.08 x 0.12). */
@@ -54,10 +58,17 @@ export function Card3D({
   if (!mesh) return null;
 
   // Source cards stand upright facing +Z: -90deg about X lays them face up,
-  // +90deg lays them face down.
-  const layRotation: [number, number, number] = flat
-    ? [faceDown ? Math.PI / 2 : -Math.PI / 2, 0, 0]
-    : [0, 0, 0];
+  // +90deg lays them face down. Sweeping the angle between the two through
+  // the flat/edge-on pose in between is the actual flip motion.
+  const faceDownAngle = Math.PI / 2;
+  const faceUpAngle = -Math.PI / 2;
+  const xAngle =
+    flipProgress !== undefined
+      ? THREE.MathUtils.lerp(faceDownAngle, faceUpAngle, flipProgress)
+      : faceDown
+        ? faceDownAngle
+        : faceUpAngle;
+  const layRotation: [number, number, number] = flat ? [xAngle, 0, 0] : [0, 0, 0];
 
   return (
     <group position={position} rotation={rotation}>
