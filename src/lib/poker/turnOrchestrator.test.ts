@@ -111,4 +111,34 @@ describe('playUntilHumanOrHandEnd', () => {
     expect(events[events.length - 1].type).toBe('showdown');
     expect(events[events.length - 1].potsAwarded?.[0].winnerIds).toEqual(['p1']);
   });
+
+  it('attaches a snapshot with stacks, bets, and pot to each event', async () => {
+    const state = postBlinds(startHand(createTournament(makePlayers(2, 1000), 25)));
+    const { events } = await playUntilHumanOrHandEnd(
+      state, 'p0', { p1: persona }, alwaysCheckOrCall, { playerId: 'p0', type: 'call' }
+    );
+    const first = events[0];
+    expect(first.type).toBe('action');
+    expect(first.snapshot!.bets).toEqual({ p0: 50, p1: 50 });
+    expect(first.snapshot!.pot).toBe(100);
+    expect(first.snapshot!.players.find((p) => p.id === 'p0')!.stack).toBe(950);
+
+    const streetEvent = events.find((e) => e.type === 'street')!;
+    expect(streetEvent.snapshot!.street).toBe('flop');
+    expect(streetEvent.snapshot!.communityCards).toHaveLength(3);
+    expect(streetEvent.snapshot!.currentBet).toBe(0);
+  });
+
+  it('snapshots awarded stacks and cleared bets on the showdown event', async () => {
+    const state = postBlinds(startHand(createTournament(makePlayers(2, 1000), 25)));
+    const { events } = await playUntilHumanOrHandEnd(
+      state, 'p0', { p1: persona }, alwaysCheckOrCall, { playerId: 'p0', type: 'fold' }
+    );
+    const showdown = events[events.length - 1];
+    expect(showdown.type).toBe('showdown');
+    expect(showdown.snapshot!.pot).toBe(0);
+    expect(showdown.snapshot!.bets).toEqual({});
+    // p1 posted 50, wins the 75 pot: 1000 - 50 + 75
+    expect(showdown.snapshot!.players.find((p) => p.id === 'p1')!.stack).toBe(1025);
+  });
 });

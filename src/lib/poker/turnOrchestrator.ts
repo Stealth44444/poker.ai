@@ -1,6 +1,6 @@
 import { TournamentState, advanceStreet, resolveShowdown, HandResult } from './tournamentEngine';
 import { applyAction, validActions } from './bettingEngine';
-import { ActionType, PlayerAction, Street } from './types';
+import { ActionType, Card, PlayerAction, Street } from './types';
 import { Persona } from './personas';
 import { DecisionContext, Decision } from '../ai/decideAction';
 
@@ -55,6 +55,29 @@ export function findNextToAct(state: TournamentState): string | null {
   return null;
 }
 
+// Display-relevant slice of state at the moment an event occurred, so the UI
+// can show stacks/pot in sync with delayed event playback instead of jumping
+// ahead to the final server state.
+export interface EventSnapshot {
+  players: { id: string; stack: number; isFolded: boolean; isAllIn: boolean }[];
+  bets: Record<string, number>;
+  pot: number;
+  communityCards: Card[];
+  street: Street;
+  currentBet: number;
+}
+
+function takeSnapshot(state: TournamentState): EventSnapshot {
+  return {
+    players: state.players.map(({ id, stack, isFolded, isAllIn }) => ({ id, stack, isFolded, isAllIn })),
+    bets: { ...state.bets },
+    pot: Object.values(state.bets).reduce((sum, b) => sum + b, 0),
+    communityCards: [...state.communityCards],
+    street: state.street,
+    currentBet: state.currentBet,
+  };
+}
+
 export interface HandEvent {
   type: 'action' | 'street' | 'showdown';
   playerId?: string;
@@ -64,6 +87,7 @@ export interface HandEvent {
   isFallback?: boolean;
   street?: Street;
   potsAwarded?: HandResult['potsAwarded'];
+  snapshot?: EventSnapshot;
 }
 
 export type DecisionFn = (context: DecisionContext, persona: Persona) => Promise<Decision>;
@@ -98,7 +122,7 @@ export async function playUntilHumanOrHandEnd(
       bets: result.bets,
       actedThisRound: [...state.actedThisRound, finalAction.playerId],
     };
-    events.push({ type: 'action', playerId: finalAction.playerId, action: finalAction.type, amount: finalAction.amount, tableTalk, isFallback: fellBack });
+    events.push({ type: 'action', playerId: finalAction.playerId, action: finalAction.type, amount: finalAction.amount, tableTalk, isFallback: fellBack, snapshot: takeSnapshot(state) });
   };
 
   if (humanAction) {
@@ -110,7 +134,7 @@ export async function playUntilHumanOrHandEnd(
     if (remaining.length === 1) {
       const { state: after, result } = resolveShowdown(state);
       state = after;
-      events.push({ type: 'showdown', potsAwarded: result.potsAwarded });
+      events.push({ type: 'showdown', potsAwarded: result.potsAwarded, snapshot: takeSnapshot(state) });
       return { state, events };
     }
 
@@ -120,11 +144,11 @@ export async function playUntilHumanOrHandEnd(
       if (state.street === 'river') {
         const { state: after, result } = resolveShowdown(state);
         state = after;
-        events.push({ type: 'showdown', potsAwarded: result.potsAwarded });
+        events.push({ type: 'showdown', potsAwarded: result.potsAwarded, snapshot: takeSnapshot(state) });
         return { state, events };
       }
       state = advanceStreet(state);
-      events.push({ type: 'street', street: state.street });
+      events.push({ type: 'street', street: state.street, snapshot: takeSnapshot(state) });
       continue;
     }
 
