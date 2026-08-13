@@ -9,3 +9,5 @@ node_modules/
 *.tsbuildinfo
 /*.hdr
 /*.exr
+/*.glb
+/*.zip

@@ -1,4 +1,5 @@
 import { Environment } from '@react-three/drei';
+import { EnvironmentProp } from './EnvironmentProp';
 
 export function Room() {
   return (
@@ -8,6 +9,7 @@ export function Room() {
         <planeGeometry args={[40, 40]} />
         <meshStandardMaterial color="#241a14" />
       </mesh>
+      <EnvironmentProp url="/props/drome-bar.glb" position={[0, -0.55, -9]} />
     </>
   );
 }
