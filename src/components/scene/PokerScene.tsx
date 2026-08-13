@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Card, Player } from '@/lib/poker/types';
 import { seatTransform } from '@/lib/scene/seatLayout';
@@ -23,15 +24,17 @@ export function PokerScene({ players, communityCards }: { players: Player[]; com
       <pointLight position={[0, 4, 0]} intensity={40} />
       <LookAroundCamera position={cameraPosition} />
       <Table />
-      {players
-        .filter((p) => p.seat !== HUMAN_SEAT)
-        .map((p) => {
-          const { position, rotationY } = seatTransform(p.seat, players.length);
-          return <Avatar key={p.id} url={AVATAR_URL} position={position} rotationY={rotationY} />;
-        })}
-      {communityCards.map((card, i) => (
-        <Card3D key={card} card={card} position={[i * 0.55 - (communityCards.length - 1) * 0.275, 0, 0]} />
-      ))}
+      <Suspense fallback={null}>
+        {players
+          .filter((p) => p.seat !== HUMAN_SEAT)
+          .map((p) => {
+            const { position, rotationY } = seatTransform(p.seat, players.length);
+            return <Avatar key={p.id} url={AVATAR_URL} position={position} rotationY={rotationY} />;
+          })}
+        {communityCards.map((card, i) => (
+          <Card3D key={card} card={card} position={[i * 0.55 - (communityCards.length - 1) * 0.275, 0, 0]} />
+        ))}
+      </Suspense>
       {human && human.stack > 0 && (
         <ChipStack count={human.stack} position={[humanSeatPos[0] * 0.6, -0.35, humanSeatPos[2] * 0.6]} />
       )}

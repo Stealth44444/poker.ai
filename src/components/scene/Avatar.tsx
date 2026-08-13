@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useAnimations, useGLTF } from '@react-three/drei';
+import { SkeletonUtils } from 'three-stdlib';
 import * as THREE from 'three';
 
 export function Avatar({
@@ -15,6 +16,9 @@ export function Avatar({
 }) {
   const group = useRef<THREE.Group>(null);
   const { scene, animations } = useGLTF(url);
+  // Each seat needs its own copy of the skeleton — reusing the cached scene
+  // directly across instances reparents the same nodes and breaks animation bindings.
+  const clonedScene = useMemo(() => SkeletonUtils.clone(scene), [scene]);
   const { actions } = useAnimations(animations, group);
 
   useEffect(() => {
@@ -27,7 +31,7 @@ export function Avatar({
 
   return (
     <group ref={group} position={position} rotation={[0, rotationY, 0]}>
-      <primitive object={scene} />
+      <primitive object={clonedScene} />
     </group>
   );
 }
