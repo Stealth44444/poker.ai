@@ -7,6 +7,7 @@ import { validActions } from '@/lib/poker/bettingEngine';
 import { PlayerAction, Player, ActionType } from '@/lib/poker/types';
 import { PERSONAS, Persona } from '@/lib/poker/personas';
 import { decideAction } from '@/lib/ai/decideAction';
+import { sanitizeStateForClient } from '@/lib/poker/sanitizeState';
 
 const sessions = new Map<string, TournamentState>();
 const HUMAN_ID = 'human';
@@ -56,8 +57,10 @@ export async function POST(request: NextRequest) {
 
     const human = state.players.find((p) => p.id === HUMAN_ID);
     const humanValidActions: ActionType[] = human && !human.isFolded ? validActions(state, HUMAN_ID) : [];
+    const revealShowdown = events[events.length - 1]?.type === 'showdown';
+    const clientState = sanitizeStateForClient(state, HUMAN_ID, revealShowdown);
 
-    const response = NextResponse.json({ sessionId: finalSessionId, state, events, validActions: humanValidActions });
+    const response = NextResponse.json({ sessionId: finalSessionId, state: clientState, events, validActions: humanValidActions });
     response.cookies.set('sessionId', finalSessionId, { httpOnly: true, sameSite: 'lax', path: '/' });
     return response;
   } catch (error) {
