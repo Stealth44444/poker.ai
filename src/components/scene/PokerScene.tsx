@@ -2,6 +2,7 @@
 
 import { Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
+import * as THREE from 'three';
 import { Card, Player } from '@/lib/poker/types';
 import { seatTransform } from '@/lib/scene/seatLayout';
 import { LookAroundCamera } from './LookAroundCamera';
@@ -20,7 +21,10 @@ export function PokerScene({ players, communityCards }: { players: Player[]; com
   const cameraPosition: [number, number, number] = [humanSeatPos[0] * 0.4, 1.2, humanSeatPos[2] * 0.4];
 
   return (
-    <Canvas camera={{ fov: 60 }}>
+    <Canvas
+      camera={{ fov: 60 }}
+      gl={{ toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1 }}
+    >
       <LookAroundCamera position={cameraPosition} />
       <Suspense fallback={null}>
         <Room />
