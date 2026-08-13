@@ -4,8 +4,12 @@ import { useCallback, useEffect, useState } from 'react';
 import { PokerScene, SeatAction } from '@/components/scene/PokerScene';
 import { HoleCardsHUD } from '@/components/scene/HoleCardsHUD';
 import { TableHUD } from '@/components/hud/TableHUD';
+import { BetControls } from '@/components/hud/BetControls';
+import { WinnerBanner } from '@/components/hud/WinnerBanner';
 import { useEventPlayback } from '@/hooks/useEventPlayback';
+import { useStaggeredReveal } from '@/hooks/useStaggeredReveal';
 import { actionLabel, deriveView } from '@/lib/playback/derivePlayback';
+import { raiseBounds } from '@/lib/poker/betMath';
 import { TournamentState } from '@/lib/poker/tournamentEngine';
 import { HandEvent } from '@/lib/poker/turnOrchestrator';
 import { ActionType, PlayerAction } from '@/lib/poker/types';
@@ -40,7 +44,18 @@ export default function PlayPage() {
   }, []);
 
   useEffect(() => {
-    callAction().then(applyResponse);
+    // React Strict Mode double-invokes mount effects in dev, firing this
+    // twice and spinning up two independent games with two session cookies;
+    // without this guard, whichever response lands second silently replaces
+    // the other's state mid-flight. Ignore the response from an invocation
+    // whose own cleanup already ran.
+    let cancelled = false;
+    callAction().then((res) => {
+      if (!cancelled) applyResponse(res);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [applyResponse]);
 
   const act = useCallback(
@@ -50,6 +65,12 @@ export default function PlayPage() {
     [applyResponse]
   );
 
+  const showdownEvent = latestEvent?.type === 'showdown' ? latestEvent : null;
+  const revealCount = state
+    ? state.players.filter((p) => !p.isFolded && p.id !== HUMAN_ID && p.holeCards.length > 0).length
+    : 0;
+  const revealedCount = useStaggeredReveal(showdownEvent !== null, revealCount);
+
   if (!state) return <div>Loading...</div>;
 
   const view = deriveView(state, displayState);
@@ -57,6 +78,7 @@ export default function PlayPage() {
   const handEnded = events.length > 0 && events[events.length - 1].type === 'showdown';
   const isHumanTurn = isDone && !handEnded && validActions.length > 0;
   const turnPlayerId = !isDone ? upcomingActorId : isHumanTurn ? HUMAN_ID : null;
+  const winnerIds = showdownEvent?.potsAwarded?.flatMap((award) => award.winnerIds) ?? [];
 
   const seatAction: SeatAction | null =
     latestEvent?.type === 'action' && latestEvent.playerId
@@ -74,8 +96,8 @@ export default function PlayPage() {
         dealerSeat={state.dealerSeat}
         turnPlayerId={turnPlayerId}
         seatAction={seatAction}
-        revealedCount={0}
-        winnerIds={[]}
+        revealedCount={revealedCount}
+        winnerIds={winnerIds}
       />
       <TableHUD
         pot={view.pot}
@@ -83,16 +105,30 @@ export default function PlayPage() {
         handNumber={state.handNumber}
         smallBlind={state.smallBlind}
         bigBlind={state.bigBlind}
+        communityCards={view.communityCards}
       />
       {human && <HoleCardsHUD cards={human.holeCards} />}
-      {isHumanTurn && (
-        <div style={{ position: 'absolute', bottom: 24, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 8 }}>
-          {validActions.map((type) => (
-            <button key={type} onClick={() => act(type)}>
-              {type}
-            </button>
-          ))}
-        </div>
+      {isHumanTurn && human && (
+        <BetControls
+          validActions={validActions}
+          toCall={Math.min(state.currentBet - (state.bets[HUMAN_ID] ?? 0), human.stack)}
+          pot={view.pot}
+          bounds={raiseBounds({
+            currentBet: state.currentBet,
+            minRaise: state.minRaise,
+            humanBet: state.bets[HUMAN_ID] ?? 0,
+            humanStack: human.stack,
+          })}
+          sliderStep={state.smallBlind}
+          onAction={act}
+        />
+      )}
+      {showdownEvent?.potsAwarded && revealedCount >= revealCount && (
+        <WinnerBanner
+          potsAwarded={showdownEvent.potsAwarded}
+          players={state.players}
+          onNextHand={() => callAction().then(applyResponse)}
+        />
       )}
     </div>
   );
