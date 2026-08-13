@@ -50,4 +50,10 @@ describe('applyAction', () => {
     expect(next.players[0].stack).toBe(0);
     expect(next.players[0].isAllIn).toBe(true);
   });
+
+  it('rejects a raise for more than the player can afford instead of driving the stack negative', () => {
+    const state: BettingRoundState = { players: [makePlayer({ stack: 1000 })], currentBet: 100, minRaise: 100, bets: { p1: 0 } };
+    // committed(0) + stack(1000) = 1000 max; 1500 is unaffordable.
+    expect(() => applyAction(state, { playerId: 'p1', type: 'raise', amount: 1500 })).toThrow();
+  });
 });

@@ -35,6 +35,26 @@ describe('decideAction', () => {
     expect(decision).toEqual({ action: 'check', isFallback: true });
   });
 
+  it('falls back when the model raises for more than the max allowed amount', async () => {
+    const client = makeClient(JSON.stringify({ action: 'raise', amount: 5000, tableTalk: 'All of it!' }));
+    const decision = await decideAction(
+      { holeCards: ['Ad', 'Kd'], communityCards: [], pot: 100, toCall: 0, minBetOrRaiseAmount: 20, maxBetOrRaiseAmount: 1000, stacks: {}, actionHistory: [], validActions: ['fold', 'check', 'raise', 'all-in'] },
+      persona,
+      { client }
+    );
+    expect(decision).toEqual({ action: 'check', isFallback: true });
+  });
+
+  it('falls back when the model raises below the minimum allowed amount', async () => {
+    const client = makeClient(JSON.stringify({ action: 'raise', amount: 5, tableTalk: 'Small raise.' }));
+    const decision = await decideAction(
+      { holeCards: ['Ad', 'Kd'], communityCards: [], pot: 100, toCall: 0, minBetOrRaiseAmount: 20, maxBetOrRaiseAmount: 1000, stacks: {}, actionHistory: [], validActions: ['fold', 'check', 'raise', 'all-in'] },
+      persona,
+      { client }
+    );
+    expect(decision).toEqual({ action: 'check', isFallback: true });
+  });
+
   it('falls back when the model raises without providing a positive amount', async () => {
     const client = makeClient(JSON.stringify({ action: 'raise', amount: null, tableTalk: 'Raise!' }));
     const decision = await decideAction(

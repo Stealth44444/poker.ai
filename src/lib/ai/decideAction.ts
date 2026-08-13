@@ -93,6 +93,12 @@ Pick one valid action. If betting or raising, "amount" must be the TOTAL chips y
     if (needsAmount && (typeof parsed.amount !== 'number' || parsed.amount <= 0)) {
       return safeFallback(context);
     }
+    if (
+      needsAmount &&
+      (parsed.amount! < context.minBetOrRaiseAmount || parsed.amount! > context.maxBetOrRaiseAmount)
+    ) {
+      return safeFallback(context);
+    }
 
     return {
       action: parsed.action as ActionType,

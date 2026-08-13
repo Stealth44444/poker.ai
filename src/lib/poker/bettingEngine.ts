@@ -52,10 +52,14 @@ export function applyAction(state: BettingRoundState, action: PlayerAction): Bet
     case 'bet':
     case 'raise': {
       const amount = action.amount ?? 0;
+      const maxAmount = committed + player.stack;
       const raiseSize = amount - currentBet;
-      const isShoveShortOfMinRaise = amount >= committed + player.stack;
+      const isShoveShortOfMinRaise = amount >= maxAmount;
       if (raiseSize < minRaise && !isShoveShortOfMinRaise) {
         throw new Error(`Raise of ${raiseSize} is below minimum raise of ${minRaise}`);
+      }
+      if (amount > maxAmount) {
+        throw new Error(`Bet/raise of ${amount} exceeds available chips (max ${maxAmount})`);
       }
       const toPutIn = amount - committed;
       player.stack -= toPutIn;
