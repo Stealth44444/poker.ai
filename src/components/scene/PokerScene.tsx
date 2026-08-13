@@ -9,6 +9,7 @@ import { LookAroundCamera } from './LookAroundCamera';
 import { Room } from './Room';
 import { Table } from './Table';
 import { Avatar } from './Avatar';
+import { Chair } from './Chair';
 import { Card3D } from './Card3D';
 import { ChipStack } from './ChipStack';
 
@@ -29,6 +30,10 @@ export function PokerScene({ players, communityCards }: { players: Player[]; com
       <Suspense fallback={null}>
         <Room />
         <Table />
+        {players.map((p) => {
+          const { position, rotationY } = seatTransform(p.seat, players.length);
+          return <Chair key={`chair-${p.id}`} position={position} rotationY={rotationY} />;
+        })}
         {players
           .filter((p) => p.seat !== HUMAN_SEAT)
           .map((p) => {
