@@ -38,12 +38,12 @@ describe('derivePlayback', () => {
 
 describe('actionLabel', () => {
   it('formats actions with and without amounts', () => {
-    expect(actionLabel({ type: 'action', action: 'fold' })).toBe('Fold');
-    expect(actionLabel({ type: 'action', action: 'check' })).toBe('Check');
-    expect(actionLabel({ type: 'action', action: 'call' })).toBe('Call');
-    expect(actionLabel({ type: 'action', action: 'raise', amount: 400 })).toBe('Raise 400');
-    expect(actionLabel({ type: 'action', action: 'bet', amount: 200 })).toBe('Bet 200');
-    expect(actionLabel({ type: 'action', action: 'all-in' })).toBe('All-in');
+    expect(actionLabel({ action: 'fold' })).toBe('Fold');
+    expect(actionLabel({ action: 'check' })).toBe('Check');
+    expect(actionLabel({ action: 'call' })).toBe('Call');
+    expect(actionLabel({ action: 'raise', amount: 400 })).toBe('Raise 400');
+    expect(actionLabel({ action: 'bet', amount: 200 })).toBe('Bet 200');
+    expect(actionLabel({ action: 'all-in' })).toBe('All-in');
   });
 });
 
