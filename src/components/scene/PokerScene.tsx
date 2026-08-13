@@ -27,9 +27,7 @@ export function PokerScene({ players, communityCards }: { players: Player[]; com
       <LookAroundCamera position={cameraPosition} />
       <Suspense fallback={null}>
         <Room />
-      </Suspense>
-      <Table />
-      <Suspense fallback={null}>
+        <Table />
         {players
           .filter((p) => p.seat !== HUMAN_SEAT)
           .map((p) => {
