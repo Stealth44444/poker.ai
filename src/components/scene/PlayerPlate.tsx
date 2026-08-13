@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Html } from '@react-three/drei';
+import { color, cutCorners, font } from '@/components/hud/theme';
 
 export interface TransientText {
   text: string;
@@ -20,19 +21,6 @@ function useTransient(value: TransientText | null, ms: number): TransientText | 
   }, [value, ms]);
   return shown;
 }
-
-const PLATE_STYLE: React.CSSProperties = {
-  minWidth: 110,
-  padding: '4px 10px',
-  borderRadius: 8,
-  background: 'rgba(10, 10, 14, 0.78)',
-  color: '#eee',
-  fontFamily: 'system-ui, sans-serif',
-  fontSize: 13,
-  textAlign: 'center',
-  pointerEvents: 'none',
-  whiteSpace: 'nowrap',
-};
 
 export function PlayerPlate({
   position,
@@ -62,38 +50,103 @@ export function PlayerPlate({
   const visibleBadge = useTransient(badge, 1200);
   const visibleTalk = useTransient(talk, 2500);
 
-  const border = isWinner
-    ? '2px solid #ffd54a'
-    : isTurn
-      ? '2px solid #6ecbff'
-      : '2px solid transparent';
+  const accent = isWinner ? color.gold : isTurn ? color.cyan : 'rgba(255,255,255,0.12)';
+  const glow = isWinner ? color.goldGlow : isTurn ? color.cyanGlow : 'transparent';
 
   return (
     <group position={position}>
       <Html center position={[0, 1.75, 0]} distanceFactor={6} zIndexRange={[20, 0]}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, opacity: isFolded ? 0.45 : 1 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, opacity: isFolded ? 0.4 : 1, fontFamily: font.body }}>
           {visibleTalk && (
-            <div style={{ ...PLATE_STYLE, background: 'rgba(240, 240, 245, 0.92)', color: '#222', maxWidth: 220, whiteSpace: 'normal' }}>
+            <div
+              style={{
+                position: 'relative',
+                padding: '6px 12px',
+                borderRadius: 10,
+                background: '#f0f0f2',
+                color: '#17181c',
+                maxWidth: 220,
+                fontSize: 14,
+                fontWeight: 600,
+                textAlign: 'center',
+                boxShadow: '0 3px 10px rgba(0,0,0,0.4)',
+              }}
+            >
               {visibleTalk.text}
+              <div
+                style={{
+                  position: 'absolute',
+                  bottom: -6,
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  width: 0,
+                  height: 0,
+                  borderLeft: '6px solid transparent',
+                  borderRight: '6px solid transparent',
+                  borderTop: '6px solid #f0f0f2',
+                }}
+              />
             </div>
           )}
           {visibleBadge && (
-            <div style={{ ...PLATE_STYLE, background: 'rgba(110, 203, 255, 0.92)', color: '#03222f', fontWeight: 700 }}>
-              {visibleBadge.text}
+            <div
+              style={{
+                padding: '3px 12px',
+                clipPath: cutCorners(5),
+                background: color.cyan,
+                color: '#00212e',
+                fontFamily: font.display,
+                fontSize: 13,
+                fontWeight: 700,
+                letterSpacing: 0.5,
+                boxShadow: `0 0 12px ${color.cyanGlow}`,
+              }}
+            >
+              {visibleBadge.text.toUpperCase()}
             </div>
           )}
-          <div style={{ ...PLATE_STYLE, border, boxShadow: isTurn ? '0 0 10px rgba(110, 203, 255, 0.8)' : 'none' }}>
-            <div style={{ fontWeight: 700 }}>
+          <div
+            style={{
+              position: 'relative',
+              minWidth: 128,
+              padding: '7px 14px 8px',
+              clipPath: cutCorners(6),
+              background: 'rgba(6, 7, 10, 0.86)',
+              border: `1px solid ${accent}`,
+              boxShadow: glow !== 'transparent' ? `0 0 14px ${glow}, 0 2px 10px rgba(0,0,0,0.5)` : '0 2px 10px rgba(0,0,0,0.5)',
+              textAlign: 'center',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <div style={{ fontSize: 13.5, fontWeight: 700, letterSpacing: 0.3, color: color.text, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
               {isDealer && (
-                <span style={{ display: 'inline-block', width: 16, height: 16, lineHeight: '16px', borderRadius: 8, background: '#ffd54a', color: '#000', marginRight: 5, fontSize: 11 }}>
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 16,
+                    height: 16,
+                    borderRadius: '50%',
+                    background: color.gold,
+                    color: '#241a00',
+                    fontFamily: font.display,
+                    fontSize: 10,
+                    fontWeight: 700,
+                  }}
+                >
                   D
                 </span>
               )}
-              {name}
-              {isAllIn && <span style={{ color: '#ff8a65', marginLeft: 5 }}>ALL-IN</span>}
+              <span>{name}</span>
+              {isAllIn && <span style={{ color: color.crimson, fontSize: 10, fontWeight: 700, letterSpacing: 0.5 }}>ALL-IN</span>}
             </div>
-            <div>{stack.toLocaleString()}</div>
-            {bet > 0 && <div style={{ color: '#9fd89f' }}>Bet {bet.toLocaleString()}</div>}
+            <div style={{ fontFamily: font.display, fontSize: 15, fontWeight: 700, color: color.gold, marginTop: 1 }}>
+              {stack.toLocaleString()}
+            </div>
+            {bet > 0 && (
+              <div style={{ fontSize: 11, color: color.emerald, fontWeight: 600, letterSpacing: 0.3 }}>BET {bet.toLocaleString()}</div>
+            )}
           </div>
         </div>
       </Html>

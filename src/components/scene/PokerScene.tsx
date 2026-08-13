@@ -125,6 +125,17 @@ export function PokerScene({
               />
             ));
           })}
+        {players
+          .filter((p) => (bets[p.id] ?? 0) > 0)
+          .map((p) => {
+            // Bet chips sit between the pot and the player's hole cards — a
+            // smaller radius than HOLE_CARD_R* so they read as "in front of"
+            // the cards rather than on top of them.
+            const angle = (p.seat / players.length) * Math.PI * 2;
+            const bx = Math.sin(angle) * HOLE_CARD_RX * 0.55;
+            const bz = Math.cos(angle) * HOLE_CARD_RZ * 0.62;
+            return <ChipStack key={`bet-chips-${p.id}`} count={bets[p.id]} position={[bx, TABLE_TOP_Y + 0.005, bz]} />;
+          })}
         {human && human.stack > 0 && (
           <ChipStack count={human.stack} position={[humanSeatPos[0] * 0.52 - 0.3, TABLE_TOP_Y, humanSeatPos[2] * 0.52]} />
         )}
