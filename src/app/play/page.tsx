@@ -18,6 +18,8 @@ interface ActionResponse {
   state: TournamentState;
   events: HandEvent[];
   validActions: ActionType[];
+  tournamentOver: boolean;
+  tournamentWinnerId: string | null;
 }
 
 const HUMAN_ID = 'human';
@@ -35,12 +37,16 @@ export default function PlayPage() {
   const [state, setState] = useState<TournamentState | null>(null);
   const [events, setEvents] = useState<HandEvent[]>([]);
   const [validActions, setValidActions] = useState<ActionType[]>([]);
+  const [tournamentOver, setTournamentOver] = useState(false);
+  const [tournamentWinnerId, setTournamentWinnerId] = useState<string | null>(null);
   const { isDone, visibleCount, displayState, upcomingActorId, latestEvent } = useEventPlayback(events);
 
   const applyResponse = useCallback((res: ActionResponse) => {
     setState(res.state);
     setEvents(res.events);
     setValidActions(res.validActions);
+    setTournamentOver(res.tournamentOver);
+    setTournamentWinnerId(res.tournamentWinnerId);
   }, []);
 
   useEffect(() => {
@@ -132,6 +138,7 @@ export default function PlayPage() {
         <WinnerBanner
           potsAwarded={showdownEvent.potsAwarded}
           players={state.players}
+          tournamentWinnerName={tournamentOver ? (state.players.find((p) => p.id === tournamentWinnerId)?.name ?? null) : null}
           onNextHand={() => callAction().then(applyResponse)}
         />
       )}

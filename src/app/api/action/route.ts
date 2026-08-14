@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
 import { cookies } from 'next/headers';
-import { createTournament, startHand, TournamentState } from '@/lib/poker/tournamentEngine';
+import { createTournament, startHand, isTournamentOver, getTournamentWinner, TournamentState } from '@/lib/poker/tournamentEngine';
 import { postBlinds, playUntilHumanOrHandEnd, HandEvent } from '@/lib/poker/turnOrchestrator';
 import { validActions } from '@/lib/poker/bettingEngine';
 import { PlayerAction, Player, ActionType } from '@/lib/poker/types';
@@ -48,7 +48,11 @@ export async function POST(request: NextRequest) {
       sessionId = randomUUID();
       state = postBlinds(startHand(createNewTournament()));
     } else if (!body.action) {
-      state = postBlinds(startHand(state));
+      // A finished tournament can't deal another hand into itself — treat
+      // "no action" here as "start a new tournament" instead.
+      state = isTournamentOver(state)
+        ? postBlinds(startHand(createNewTournament()))
+        : postBlinds(startHand(state));
     }
 
     const finalSessionId = sessionId ?? randomUUID();
@@ -64,8 +68,17 @@ export async function POST(request: NextRequest) {
     const humanValidActions: ActionType[] = human && !human.isFolded ? validActions(state, HUMAN_ID) : [];
     const revealShowdown = events[events.length - 1]?.type === 'showdown';
     const clientState = sanitizeStateForClient(state, HUMAN_ID, revealShowdown);
+    const tournamentOver = isTournamentOver(state);
+    const tournamentWinnerId = tournamentOver ? getTournamentWinner(state)?.id ?? null : null;
 
-    const response = NextResponse.json({ sessionId: finalSessionId, state: clientState, events, validActions: humanValidActions });
+    const response = NextResponse.json({
+      sessionId: finalSessionId,
+      state: clientState,
+      events,
+      validActions: humanValidActions,
+      tournamentOver,
+      tournamentWinnerId,
+    });
     response.cookies.set('sessionId', finalSessionId, { httpOnly: true, sameSite: 'lax', path: '/' });
     return response;
   } catch (error) {
