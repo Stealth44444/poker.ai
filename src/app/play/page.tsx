@@ -8,6 +8,7 @@ import { BetControls } from '@/components/hud/BetControls';
 import { WinnerBanner } from '@/components/hud/WinnerBanner';
 import { useEventPlayback } from '@/hooks/useEventPlayback';
 import { useStaggeredReveal } from '@/hooks/useStaggeredReveal';
+import { playHandWin, playTournamentWin, playTurnChime } from '@/lib/audio/sfx';
 import { actionLabel, deriveView } from '@/lib/playback/derivePlayback';
 import { raiseBounds } from '@/lib/poker/betMath';
 import { TournamentState } from '@/lib/poker/tournamentEngine';
@@ -76,13 +77,24 @@ export default function PlayPage() {
     ? state.players.filter((p) => !p.isFolded && p.id !== HUMAN_ID && p.holeCards.length > 0).length
     : 0;
   const revealedCount = useStaggeredReveal(showdownEvent !== null, revealCount);
+  const handEnded = events.length > 0 && events[events.length - 1].type === 'showdown';
+  const isHumanTurn = isDone && !handEnded && validActions.length > 0;
+  const showWinnerBanner = Boolean(showdownEvent?.potsAwarded) && revealedCount >= revealCount;
+
+  useEffect(() => {
+    if (isHumanTurn) playTurnChime();
+  }, [isHumanTurn]);
+
+  useEffect(() => {
+    if (!showWinnerBanner) return;
+    if (tournamentOver) playTournamentWin();
+    else playHandWin();
+  }, [showWinnerBanner, tournamentOver]);
 
   if (!state) return <div>Loading...</div>;
 
   const view = deriveView(state, displayState);
   const human = view.players.find((p) => p.id === HUMAN_ID);
-  const handEnded = events.length > 0 && events[events.length - 1].type === 'showdown';
-  const isHumanTurn = isDone && !handEnded && validActions.length > 0;
   const turnPlayerId = !isDone ? upcomingActorId : isHumanTurn ? HUMAN_ID : null;
   const winnerIds = showdownEvent?.potsAwarded?.flatMap((award) => award.winnerIds) ?? [];
   const payouts: Payout[] =
@@ -134,7 +146,7 @@ export default function PlayPage() {
           onAction={act}
         />
       )}
-      {showdownEvent?.potsAwarded && revealedCount >= revealCount && (
+      {showWinnerBanner && showdownEvent?.potsAwarded && (
         <WinnerBanner
           potsAwarded={showdownEvent.potsAwarded}
           players={state.players}

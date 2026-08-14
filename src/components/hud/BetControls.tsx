@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { ActionType } from '@/lib/poker/types';
 import { RaiseBounds, clampAmount, raisePresets } from '@/lib/poker/betMath';
+import { playClick } from '@/lib/audio/sfx';
 import { HudFrame } from './HudFrame';
 import { color, cutCorners, font } from './theme';
 
@@ -19,7 +20,10 @@ function ActionButton({
 }) {
   return (
     <button
-      onClick={onClick}
+      onClick={() => {
+        playClick();
+        onClick();
+      }}
       style={{
         clipPath: cutCorners(8),
         padding: '13px 26px',
@@ -72,6 +76,7 @@ export function BetControls({
   const raiseType: ActionType = validActions.includes('bet') ? 'bet' : 'raise';
 
   const confirm = () => {
+    playClick();
     const clamped = clampAmount(amount, bounds);
     if (clamped >= bounds.maxTotal) onAction('all-in');
     else onAction(raiseType, clamped);
