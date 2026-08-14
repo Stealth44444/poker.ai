@@ -21,11 +21,20 @@ export function HoleCardsHUD({ cards }: { cards: Card[] }) {
         width: 240,
         height: 190,
         pointerEvents: 'none',
-        clipPath: cutCorners(10),
-        background: 'rgba(6, 7, 10, 0.55)',
-        border: `1px solid ${color.panelBorder}`,
       }}
     >
+      {/* Decorative notched panel, separate from the canvas below — the
+          cut corners must never clip the card meshes, which render close
+          to the full width/height of this box. */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          clipPath: cutCorners(10),
+          background: 'rgba(6, 7, 10, 0.55)',
+          border: `1px solid ${color.panelBorder}`,
+        }}
+      />
       <div
         style={{
           position: 'absolute',
