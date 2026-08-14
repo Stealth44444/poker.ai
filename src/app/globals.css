@@ -71,6 +71,12 @@ a {
   }
 }
 
+@keyframes hud-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .hud-range {
   -webkit-appearance: none;
   appearance: none;

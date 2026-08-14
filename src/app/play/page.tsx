@@ -6,6 +6,7 @@ import { HoleCardsHUD } from '@/components/scene/HoleCardsHUD';
 import { TableHUD } from '@/components/hud/TableHUD';
 import { BetControls } from '@/components/hud/BetControls';
 import { WinnerBanner } from '@/components/hud/WinnerBanner';
+import { LoadingScreen } from '@/components/hud/LoadingScreen';
 import { useEventPlayback } from '@/hooks/useEventPlayback';
 import { useStaggeredReveal } from '@/hooks/useStaggeredReveal';
 import { playCardPlace, playCardShuffle, playChipCollide, playChipStack, playHandWin, playTournamentWin, playTurnChime } from '@/lib/audio/sfx';
@@ -109,7 +110,7 @@ export default function PlayPage() {
     }
   }, [latestEvent]);
 
-  if (!state) return <div>Loading...</div>;
+  if (!state) return <LoadingScreen />;
 
   const view = deriveView(state, displayState);
   const human = view.players.find((p) => p.id === HUMAN_ID);
