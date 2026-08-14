@@ -16,13 +16,19 @@ import { AnimatedGroup } from './AnimatedGroup';
 import { PlayerPlate, ActionBadge } from './PlayerPlate';
 
 const HUMAN_SEAT = 0;
-// Two avatar models alternated by seat for variety. sitting-2's fbx2gltf
+// Avatar models alternated by seat for variety. sitting-2's fbx2gltf
 // conversion bakes the FBX cm->m factor into its inverse bind matrices
 // without compensating the bone hierarchy, so its skinned output renders at
 // 1/100 scale — the x100 here cancels that, x0.5 sizes her to the table.
+// sitting-3 doesn't have that bug (checked via debug-avatar's bbox logger:
+// its "Body" mesh sits at ~1.9x sitting-idle's height at scale 1) — 0.5
+// brings it in line with the other two. sitting-4 shares sitting-idle's
+// "ChNN" mesh-naming convention and, likewise, needs no correction.
 const AVATARS = [
   { url: '/avatars/sitting-idle.glb', scale: 1 },
   { url: '/avatars/sitting-2.glb', scale: 65 },
+  { url: '/avatars/sitting-3.glb', scale: 0.5 },
+  { url: '/avatars/sitting-4.glb', scale: 1 },
 ];
 // leonard-garcia-table.glb: raw height (1.502 - 0.049) * 0.75 scale, placed at y=-0.4.
 const TABLE_TOP_Y = 0.69;

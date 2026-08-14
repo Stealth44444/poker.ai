@@ -49,3 +49,5 @@ export function Avatar({
 
 useGLTF.preload('/avatars/sitting-idle.glb');
 useGLTF.preload('/avatars/sitting-2.glb');
+useGLTF.preload('/avatars/sitting-3.glb');
+useGLTF.preload('/avatars/sitting-4.glb');
