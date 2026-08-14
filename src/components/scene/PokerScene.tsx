@@ -67,25 +67,37 @@ export function PokerScene({
   const human = players.find((p) => p.seat === HUMAN_SEAT);
   const humanSeatPos = seatTransform(HUMAN_SEAT, players.length).position;
   // Sit the camera at the human's seat (just outside the table edge) at seated eye
-  // height — scaling the seat position inward would put the viewpoint over the felt.
-  const cameraPosition: [number, number, number] = [humanSeatPos[0], 1.15, humanSeatPos[2]];
+  // height, pulled back slightly along the seat's own outward direction — with 10
+  // seats around the felt, the two immediately flanking the human sit at a wide
+  // bearing; pulling back (combined with CAMERA_FOV below) brings every seat inside
+  // the default view instead of requiring a drag-to-look for the neighbors.
+  const CAMERA_PULLBACK = 0.6;
+  const CAMERA_FOV = 74;
+  const seatDist = Math.hypot(humanSeatPos[0], humanSeatPos[2]);
+  const pullBackScale = (seatDist + CAMERA_PULLBACK) / seatDist;
+  const cameraPosition: [number, number, number] = [humanSeatPos[0] * pullBackScale, 1.15, humanSeatPos[2] * pullBackScale];
 
   // Seat-ordered showdown participants; the first `revealedCount` show their cards.
   const revealOrder = players.filter((p) => !p.isFolded && p.seat !== HUMAN_SEAT && p.holeCards.length > 0);
 
   return (
     <Canvas
-      camera={{ fov: 60 }}
+      camera={{ fov: CAMERA_FOV }}
       gl={{ toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1 }}
     >
       <LookAroundCamera position={cameraPosition} />
       <Suspense fallback={null}>
         <Room />
         <Table />
-        {players.map((p) => {
-          const { position, rotationY } = seatTransform(p.seat, players.length);
-          return <Chair key={`chair-${p.id}`} position={position} rotationY={rotationY} />;
-        })}
+        {players
+          .filter((p) => p.seat !== HUMAN_SEAT)
+          .map((p) => {
+            // The human's own chair sits between their (pulled-back) camera and the
+            // table — rendering it would block the view, the same reason their own
+            // avatar is skipped below.
+            const { position, rotationY } = seatTransform(p.seat, players.length);
+            return <Chair key={`chair-${p.id}`} position={position} rotationY={rotationY} />;
+          })}
         {players
           .filter((p) => p.seat !== HUMAN_SEAT)
           .map((p) => {
