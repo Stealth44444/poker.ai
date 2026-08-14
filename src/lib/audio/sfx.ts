@@ -109,3 +109,22 @@ export function playChipStack(): void {
 export function playChipCollide(): void {
   playClip(randomOf(CHIP_COLLIDE_URLS), 0.35);
 }
+
+// Spoken lines from Kenney's CC0 "Voiceover Pack #1" (public/voice/, see
+// LICENSE.txt there) — the pack is generic arcade/action phrases, so only
+// the handful that read naturally over a poker hand are used here.
+
+/** A new hand is being dealt (layers with playCardShuffle). */
+export function playVoiceReady(): void {
+  playClip('/voice/ready.ogg', 0.5);
+}
+
+/** The human won a hand or the tournament. */
+export function playVoiceWin(): void {
+  playClip('/voice/congratulations.ogg', 0.5);
+}
+
+/** The human busted out of the tournament. */
+export function playVoiceGameOver(): void {
+  playClip('/voice/game_over.ogg', 0.5);
+}

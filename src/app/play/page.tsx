@@ -11,7 +11,18 @@ import { ActionPending } from '@/components/hud/ActionPending';
 import { ErrorBanner } from '@/components/hud/ErrorBanner';
 import { useEventPlayback } from '@/hooks/useEventPlayback';
 import { useStaggeredReveal } from '@/hooks/useStaggeredReveal';
-import { playCardPlace, playCardShuffle, playChipCollide, playChipStack, playHandWin, playTournamentWin, playTurnChime } from '@/lib/audio/sfx';
+import {
+  playCardPlace,
+  playCardShuffle,
+  playChipCollide,
+  playChipStack,
+  playHandWin,
+  playTournamentWin,
+  playTurnChime,
+  playVoiceGameOver,
+  playVoiceReady,
+  playVoiceWin,
+} from '@/lib/audio/sfx';
 import { actionLabel, deriveView } from '@/lib/playback/derivePlayback';
 import { raiseBounds } from '@/lib/poker/betMath';
 import { TournamentState } from '@/lib/poker/tournamentEngine';
@@ -114,6 +125,8 @@ export default function PlayPage() {
   const handEnded = events.length > 0 && events[events.length - 1].type === 'showdown';
   const isHumanTurn = isDone && !handEnded && validActions.length > 0;
   const showWinnerBanner = Boolean(showdownEvent?.potsAwarded) && revealedCount >= revealCount;
+  const humanWonHand = (showdownEvent?.potsAwarded?.flatMap((award) => award.winnerIds) ?? []).includes(HUMAN_ID);
+  const humanWonTournament = tournamentOver && tournamentWinnerId === HUMAN_ID;
 
   useEffect(() => {
     if (isHumanTurn) playTurnChime();
@@ -122,12 +135,27 @@ export default function PlayPage() {
   useEffect(() => {
     if (!showWinnerBanner) return;
     playChipCollide();
-    if (tournamentOver) playTournamentWin();
-    else playHandWin();
-  }, [showWinnerBanner, tournamentOver]);
+    if (tournamentOver) {
+      // Only the actual winner gets the triumphant fanfare — busting out
+      // shouldn't sound identical to winning the whole table.
+      if (humanWonTournament) {
+        playTournamentWin();
+        playVoiceWin();
+      } else {
+        playVoiceGameOver();
+      }
+    } else {
+      playHandWin();
+      if (humanWonHand) playVoiceWin();
+    }
+  }, [showWinnerBanner, tournamentOver, humanWonTournament, humanWonHand]);
 
   useEffect(() => {
-    if (state) playCardShuffle();
+    if (!state) return;
+    playCardShuffle();
+    // "Ready" once per tournament (hand #1), not before every single hand —
+    // it's a spoken line, repeating it every hand would get old fast.
+    if (state.handNumber === 1) playVoiceReady();
     // Only the hand number identifies "a new hand started" — re-running
     // this for every state update (e.g. mid-hand stack changes) would
     // replay the shuffle sound on every action instead of once per hand.
