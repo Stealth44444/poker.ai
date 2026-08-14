@@ -1,10 +1,11 @@
 'use client';
 
-// Synthesized sound effects via the Web Audio API — no audio asset files
-// exist in this project, so these are simple oscillator tones rather than
-// recorded clips. Card-deal/chip-clink/ambient sound needs real audio
-// files supplied separately; swap those in as `<audio>`-based playback
-// once available rather than trying to synthesize them here.
+// UI feedback tones (click/chime/win) are synthesized via the Web Audio API
+// since they're purely functional cues. Game-world sounds (cards, chips) use
+// real clips from Kenney's CC0 "Casino Audio" pack (public/sfx/, see
+// LICENSE.txt there) — decoded once into AudioBuffers and played through
+// fresh BufferSourceNodes each time, so the same clip can overlap itself
+// (e.g. multiple chip sounds in quick succession) without cutting off.
 
 let ctx: AudioContext | null = null;
 
@@ -49,4 +50,62 @@ export function playHandWin(): void {
 /** The tournament itself was won. */
 export function playTournamentWin(): void {
   [523.25, 659.25, 783.99, 1046.5].forEach((freq, i) => tone(freq, i * 0.12, 0.35, 0.13, 'triangle'));
+}
+
+const bufferCache = new Map<string, Promise<AudioBuffer>>();
+
+function loadBuffer(url: string): Promise<AudioBuffer> {
+  let cached = bufferCache.get(url);
+  if (!cached) {
+    cached = fetch(url)
+      .then((res) => res.arrayBuffer())
+      .then((data) => getContext().decodeAudioData(data));
+    bufferCache.set(url, cached);
+  }
+  return cached;
+}
+
+function playClip(url: string, gain = 0.4): void {
+  loadBuffer(url)
+    .then((buffer) => {
+      const audioCtx = getContext();
+      const source = audioCtx.createBufferSource();
+      const gainNode = audioCtx.createGain();
+      gainNode.gain.value = gain;
+      source.buffer = buffer;
+      source.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      source.start();
+    })
+    .catch(() => {
+      // Missing/corrupt asset shouldn't break gameplay — silently skip.
+    });
+}
+
+function randomOf<T>(items: T[]): T {
+  return items[Math.floor(Math.random() * items.length)];
+}
+
+const CARD_PLACE_URLS = [1, 2, 3, 4].map((i) => `/sfx/card-place-${i}.ogg`);
+const CHIP_STACK_URLS = [1, 2, 3, 4, 5, 6].map((i) => `/sfx/chips-stack-${i}.ogg`);
+const CHIP_COLLIDE_URLS = [1, 2, 3, 4].map((i) => `/sfx/chips-collide-${i}.ogg`);
+
+/** A new hand is being dealt. */
+export function playCardShuffle(): void {
+  playClip('/sfx/card-shuffle.ogg', 0.35);
+}
+
+/** Community cards revealed (flop/turn/river). */
+export function playCardPlace(): void {
+  playClip(randomOf(CARD_PLACE_URLS), 0.4);
+}
+
+/** A player bet, called, raised, or went all-in. */
+export function playChipStack(): void {
+  playClip(randomOf(CHIP_STACK_URLS), 0.3);
+}
+
+/** The pot lands at the winner's seat. */
+export function playChipCollide(): void {
+  playClip(randomOf(CHIP_COLLIDE_URLS), 0.35);
 }

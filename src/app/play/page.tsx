@@ -8,7 +8,7 @@ import { BetControls } from '@/components/hud/BetControls';
 import { WinnerBanner } from '@/components/hud/WinnerBanner';
 import { useEventPlayback } from '@/hooks/useEventPlayback';
 import { useStaggeredReveal } from '@/hooks/useStaggeredReveal';
-import { playHandWin, playTournamentWin, playTurnChime } from '@/lib/audio/sfx';
+import { playCardPlace, playCardShuffle, playChipCollide, playChipStack, playHandWin, playTournamentWin, playTurnChime } from '@/lib/audio/sfx';
 import { actionLabel, deriveView } from '@/lib/playback/derivePlayback';
 import { raiseBounds } from '@/lib/poker/betMath';
 import { TournamentState } from '@/lib/poker/tournamentEngine';
@@ -24,6 +24,7 @@ interface ActionResponse {
 }
 
 const HUMAN_ID = 'human';
+const CHIP_ACTIONS: ReadonlySet<ActionType> = new Set(['call', 'bet', 'raise', 'all-in']);
 
 async function callAction(action?: PlayerAction): Promise<ActionResponse> {
   const res = await fetch('/api/action', {
@@ -87,9 +88,26 @@ export default function PlayPage() {
 
   useEffect(() => {
     if (!showWinnerBanner) return;
+    playChipCollide();
     if (tournamentOver) playTournamentWin();
     else playHandWin();
   }, [showWinnerBanner, tournamentOver]);
+
+  useEffect(() => {
+    if (state) playCardShuffle();
+    // Only the hand number identifies "a new hand started" — re-running
+    // this for every state update (e.g. mid-hand stack changes) would
+    // replay the shuffle sound on every action instead of once per hand.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state?.handNumber]);
+
+  useEffect(() => {
+    if (latestEvent?.type === 'street') {
+      playCardPlace();
+    } else if (latestEvent?.type === 'action' && latestEvent.action && CHIP_ACTIONS.has(latestEvent.action)) {
+      playChipStack();
+    }
+  }, [latestEvent]);
 
   if (!state) return <div>Loading...</div>;
 
