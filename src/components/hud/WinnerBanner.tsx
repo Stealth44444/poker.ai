@@ -9,12 +9,15 @@ export function WinnerBanner({
   potsAwarded,
   players,
   tournamentWinnerName,
+  disabled,
   onNextHand,
 }: {
   potsAwarded: HandResult['potsAwarded'];
   players: Player[];
   /** Present once the tournament itself has been won — swaps the button to start a new one. */
   tournamentWinnerName?: string | null;
+  /** True while a request is already in flight — blocks repeat clicks. */
+  disabled?: boolean;
   onNextHand: () => void;
 }) {
   const nameOf = (id: string) => players.find((p) => p.id === id)?.name ?? id;
@@ -66,10 +69,11 @@ export function WinnerBanner({
           )}
           <button
             onClick={onNextHand}
+            disabled={disabled}
             style={{
               clipPath: cutCorners(6),
               padding: '11px 28px',
-              background: color.emerald,
+              background: disabled ? 'rgba(61, 220, 132, 0.4)' : color.emerald,
               border: 'none',
               color: '#04220f',
               fontFamily: font.display,
@@ -77,8 +81,8 @@ export function WinnerBanner({
               fontWeight: 700,
               letterSpacing: 1,
               textTransform: 'uppercase',
-              cursor: 'pointer',
-              boxShadow: `0 0 14px ${color.emeraldGlow}`,
+              cursor: disabled ? 'default' : 'pointer',
+              boxShadow: disabled ? 'none' : `0 0 14px ${color.emeraldGlow}`,
             }}
           >
             {tournamentWinnerName ? 'New Tournament' : 'Next Hand'}

@@ -1,12 +1,14 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { PokerScene, Payout, SeatAction } from '@/components/scene/PokerScene';
 import { HoleCardsHUD } from '@/components/scene/HoleCardsHUD';
 import { TableHUD } from '@/components/hud/TableHUD';
 import { BetControls } from '@/components/hud/BetControls';
 import { WinnerBanner } from '@/components/hud/WinnerBanner';
 import { LoadingScreen } from '@/components/hud/LoadingScreen';
+import { ActionPending } from '@/components/hud/ActionPending';
+import { ErrorBanner } from '@/components/hud/ErrorBanner';
 import { useEventPlayback } from '@/hooks/useEventPlayback';
 import { useStaggeredReveal } from '@/hooks/useStaggeredReveal';
 import { playCardPlace, playCardShuffle, playChipCollide, playChipStack, playHandWin, playTournamentWin, playTurnChime } from '@/lib/audio/sfx';
@@ -33,7 +35,11 @@ async function callAction(action?: PlayerAction): Promise<ActionResponse> {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ action }),
   });
-  return res.json();
+  const body = await res.json().catch(() => null);
+  if (!res.ok || !body || !body.state) {
+    throw new Error(body?.error || `테이블에 연결할 수 없습니다 (${res.status}).`);
+  }
+  return body as ActionResponse;
 }
 
 export default function PlayPage() {
@@ -42,6 +48,9 @@ export default function PlayPage() {
   const [validActions, setValidActions] = useState<ActionType[]>([]);
   const [tournamentOver, setTournamentOver] = useState(false);
   const [tournamentWinnerId, setTournamentWinnerId] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const lastAttempt = useRef<PlayerAction | undefined>(undefined);
   const { isDone, visibleCount, displayState, upcomingActorId, latestEvent } = useEventPlayback(events);
 
   const applyResponse = useCallback((res: ActionResponse) => {
@@ -52,6 +61,21 @@ export default function PlayPage() {
     setTournamentWinnerId(res.tournamentWinnerId);
   }, []);
 
+  const runAction = useCallback(
+    (action?: PlayerAction) => {
+      lastAttempt.current = action;
+      setSubmitting(true);
+      setActionError(null);
+      callAction(action)
+        .then(applyResponse)
+        .catch((err) => setActionError(err instanceof Error ? err.message : '문제가 발생했습니다.'))
+        .finally(() => setSubmitting(false));
+    },
+    [applyResponse]
+  );
+
+  const retry = useCallback(() => runAction(lastAttempt.current), [runAction]);
+
   useEffect(() => {
     // React Strict Mode double-invokes mount effects in dev, firing this
     // twice and spinning up two independent games with two session cookies;
@@ -59,9 +83,17 @@ export default function PlayPage() {
     // the other's state mid-flight. Ignore the response from an invocation
     // whose own cleanup already ran.
     let cancelled = false;
-    callAction().then((res) => {
-      if (!cancelled) applyResponse(res);
-    });
+    setSubmitting(true);
+    callAction()
+      .then((res) => {
+        if (!cancelled) applyResponse(res);
+      })
+      .catch((err) => {
+        if (!cancelled) setActionError(err instanceof Error ? err.message : '문제가 발생했습니다.');
+      })
+      .finally(() => {
+        if (!cancelled) setSubmitting(false);
+      });
     return () => {
       cancelled = true;
     };
@@ -69,9 +101,9 @@ export default function PlayPage() {
 
   const act = useCallback(
     (type: ActionType, amount?: number) => {
-      callAction({ playerId: HUMAN_ID, type, amount }).then(applyResponse);
+      runAction({ playerId: HUMAN_ID, type, amount });
     },
-    [applyResponse]
+    [runAction]
   );
 
   const showdownEvent = latestEvent?.type === 'showdown' ? latestEvent : null;
@@ -110,7 +142,9 @@ export default function PlayPage() {
     }
   }, [latestEvent]);
 
-  if (!state) return <LoadingScreen />;
+  if (!state) {
+    return actionError ? <ErrorBanner message={actionError} onRetry={retry} /> : <LoadingScreen />;
+  }
 
   const view = deriveView(state, displayState);
   const human = view.players.find((p) => p.id === HUMAN_ID);
@@ -150,7 +184,7 @@ export default function PlayPage() {
         communityCards={view.communityCards}
       />
       {human && <HoleCardsHUD cards={human.holeCards} />}
-      {isHumanTurn && human && (
+      {isHumanTurn && human && !submitting && (
         <BetControls
           validActions={validActions}
           toCall={Math.min(state.currentBet - (state.bets[HUMAN_ID] ?? 0), human.stack)}
@@ -165,12 +199,15 @@ export default function PlayPage() {
           onAction={act}
         />
       )}
+      {submitting && <ActionPending />}
+      {actionError && <ErrorBanner message={actionError} onRetry={retry} />}
       {showWinnerBanner && showdownEvent?.potsAwarded && (
         <WinnerBanner
           potsAwarded={showdownEvent.potsAwarded}
           players={state.players}
           tournamentWinnerName={tournamentOver ? (state.players.find((p) => p.id === tournamentWinnerId)?.name ?? null) : null}
-          onNextHand={() => callAction().then(applyResponse)}
+          disabled={submitting}
+          onNextHand={() => runAction()}
         />
       )}
     </div>
