@@ -3,7 +3,7 @@
 import { HandResult } from '@/lib/poker/tournamentEngine';
 import { Player } from '@/lib/poker/types';
 import { HudFrame } from './HudFrame';
-import { color, cutCorners, font } from './theme';
+import { color, cutCorners, font, hudZIndex } from './theme';
 
 export function WinnerBanner({
   potsAwarded,
@@ -28,6 +28,7 @@ export function WinnerBanner({
         top: '36%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
+        zIndex: hudZIndex,
         animation: 'hud-fade-up 340ms ease-out',
       }}
     >

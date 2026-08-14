@@ -4,7 +4,7 @@ import { Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Card } from '@/lib/poker/types';
 import { Card3D } from './Card3D';
-import { color, cutCorners, font } from '@/components/hud/theme';
+import { color, cutCorners, font, hudZIndex } from '@/components/hud/theme';
 
 /**
  * Screen-corner display of the player's own hand, rendered with the same card
@@ -20,6 +20,7 @@ export function HoleCardsHUD({ cards }: { cards: Card[] }) {
         bottom: 18,
         width: 240,
         height: 190,
+        zIndex: hudZIndex,
         pointerEvents: 'none',
       }}
     >

@@ -1,7 +1,7 @@
 'use client';
 
 import { HudFrame } from './HudFrame';
-import { color, cutCorners, font } from './theme';
+import { color, cutCorners, font, hudZIndex } from './theme';
 
 export function ErrorBanner({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
@@ -11,6 +11,7 @@ export function ErrorBanner({ message, onRetry }: { message: string; onRetry: ()
         top: '50%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
+        zIndex: hudZIndex,
         animation: 'hud-fade-up 260ms ease-out',
       }}
     >

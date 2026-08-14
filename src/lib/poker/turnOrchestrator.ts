@@ -83,7 +83,6 @@ export interface HandEvent {
   playerId?: string;
   action?: ActionType;
   amount?: number;
-  tableTalk?: string;
   isFallback?: boolean;
   street?: Street;
   potsAwarded?: HandResult['potsAwarded'];
@@ -102,7 +101,7 @@ export async function playUntilHumanOrHandEnd(
   const events: HandEvent[] = [];
   let state = initialState;
 
-  const applyAndRecord = (action: PlayerAction, isFallback?: boolean, tableTalk?: string) => {
+  const applyAndRecord = (action: PlayerAction, isFallback?: boolean) => {
     let finalAction = action;
     let fellBack = isFallback;
     let result;
@@ -122,7 +121,7 @@ export async function playUntilHumanOrHandEnd(
       bets: result.bets,
       actedThisRound: [...state.actedThisRound, finalAction.playerId],
     };
-    events.push({ type: 'action', playerId: finalAction.playerId, action: finalAction.type, amount: finalAction.amount, tableTalk, isFallback: fellBack, snapshot: takeSnapshot(state) });
+    events.push({ type: 'action', playerId: finalAction.playerId, action: finalAction.type, amount: finalAction.amount, isFallback: fellBack, snapshot: takeSnapshot(state) });
   };
 
   if (humanAction) {
@@ -180,6 +179,6 @@ export async function playUntilHumanOrHandEnd(
       persona
     );
 
-    applyAndRecord({ playerId: nextId, type: decision.action, amount: decision.amount }, decision.isFallback, decision.tableTalk);
+    applyAndRecord({ playerId: nextId, type: decision.action, amount: decision.amount }, decision.isFallback);
   }
 }

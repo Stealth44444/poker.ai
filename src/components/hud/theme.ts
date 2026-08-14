@@ -26,6 +26,12 @@ export const font = {
   body: 'var(--font-body), "Rajdhani", sans-serif',
 } as const;
 
+/** PlayerPlate anchors its nameplate to drei's <Html zIndexRange={[20, 0]}>,
+ * which stacks by explicit z-index regardless of DOM order — any 2D overlay
+ * without its own z-index can end up rendered behind it. Every top-level HUD
+ * panel (TableHUD, BetControls, WinnerBanner, etc.) should set this. */
+export const hudZIndex = 50;
+
 /** Angular cut-corner frame used by every HUD panel — the shared silhouette
  * that makes disparate overlays (pot readout, nameplate, bet controls) read
  * as one instrument panel instead of unrelated floating boxes. */

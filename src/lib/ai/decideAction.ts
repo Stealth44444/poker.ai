@@ -19,7 +19,6 @@ export interface DecisionContext {
 export interface Decision {
   action: ActionType;
   amount?: number;
-  tableTalk?: string;
   isFallback?: boolean;
 }
 
@@ -52,9 +51,8 @@ const DECISION_SCHEMA = {
     properties: {
       action: { type: 'string', enum: ['fold', 'check', 'call', 'bet', 'raise', 'all-in'] },
       amount: { type: ['number', 'null'] },
-      tableTalk: { type: ['string', 'null'] },
     },
-    required: ['action', 'amount', 'tableTalk'],
+    required: ['action', 'amount'],
     additionalProperties: false,
   },
 } as const;
@@ -79,7 +77,7 @@ Your remaining stack: ${context.yourStack}.
 Stacks at the table: ${opponentStacks || '(unknown)'}.
 Action this hand so far: ${context.actionHistory.join('; ') || '(no actions yet)'}.
 Valid actions: ${context.validActions.join(', ')}.
-Pick one valid action that fits both your style and the situation — weigh your stack size, the pot, and what's already happened this hand. If multiple players have already raised each other this hand, only keep matching or reraising with a genuinely strong hand; otherwise call, or fold rather than escalate a losing spot. Going all-in should be a deliberate choice for a strong hand or a clear stack-pressure/pot-odds reason, not a reflexive default. If betting or raising, "amount" must be the TOTAL chips you have in front of you this street (not just the extra chips added), and must be between ${context.minBetOrRaiseAmount} and ${context.maxBetOrRaiseAmount} inclusive. Set "tableTalk" to null for routine checks and calls — stay quiet there. Only include tableTalk when the moment actually calls for a reaction: you're raising or going all-in, or folding a hand you'd already put real chips into. When you do talk, write one short, natural, casual sentence in Korean (한국어).`;
+Pick one valid action that fits both your style and the situation — weigh your stack size, the pot, and what's already happened this hand. If multiple players have already raised each other this hand, only keep matching or reraising with a genuinely strong hand; otherwise call, or fold rather than escalate a losing spot. Going all-in should be a deliberate choice for a strong hand or a clear stack-pressure/pot-odds reason, not a reflexive default. If betting or raising, "amount" must be the TOTAL chips you have in front of you this street (not just the extra chips added), and must be between ${context.minBetOrRaiseAmount} and ${context.maxBetOrRaiseAmount} inclusive.`;
 
   try {
     const response = await Promise.race([
@@ -94,7 +92,7 @@ Pick one valid action that fits both your style and the situation — weigh your
     const content = response.choices[0]?.message.content;
     if (!content) return safeFallback(context);
 
-    const parsed = JSON.parse(content) as { action: string; amount: number | null; tableTalk: string | null };
+    const parsed = JSON.parse(content) as { action: string; amount: number | null };
     if (!context.validActions.includes(parsed.action as ActionType)) {
       return safeFallback(context);
     }
@@ -112,7 +110,6 @@ Pick one valid action that fits both your style and the situation — weigh your
     return {
       action: parsed.action as ActionType,
       amount: parsed.amount ?? undefined,
-      tableTalk: parsed.tableTalk ?? undefined,
     };
   } catch {
     return safeFallback(context);

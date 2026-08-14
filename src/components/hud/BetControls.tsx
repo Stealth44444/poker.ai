@@ -5,7 +5,7 @@ import { ActionType } from '@/lib/poker/types';
 import { RaiseBounds, clampAmount, raisePresets } from '@/lib/poker/betMath';
 import { playClick } from '@/lib/audio/sfx';
 import { HudFrame } from './HudFrame';
-import { color, cutCorners, font } from './theme';
+import { color, cutCorners, font, hudZIndex } from './theme';
 
 function ActionButton({
   label,
@@ -90,6 +90,7 @@ export function BetControls({
         bottom: 28,
         left: '50%',
         transform: 'translateX(-50%)',
+        zIndex: hudZIndex,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',

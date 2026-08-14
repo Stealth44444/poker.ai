@@ -7,7 +7,6 @@ interface HandEvent {
   playerId?: string;
   action?: string;
   amount?: number;
-  tableTalk?: string;
   isFallback?: boolean;
   street?: string;
   potsAwarded?: { winnerIds: string[]; amountPerWinner: number }[];
@@ -108,7 +107,7 @@ export default function DebugPage() {
             {data.events.map((e, i) => (
               <li key={i}>
                 {e.type === 'action' &&
-                  `${e.playerId}: ${e.action}${e.amount ? ' ' + e.amount : ''}${e.tableTalk ? ' — "' + e.tableTalk + '"' : ''}${e.isFallback ? ' (fallback)' : ''}`}
+                  `${e.playerId}: ${e.action}${e.amount ? ' ' + e.amount : ''}${e.isFallback ? ' (fallback)' : ''}`}
                 {e.type === 'street' && `-- ${e.street} --`}
                 {e.type === 'showdown' && `Showdown: ${JSON.stringify(e.potsAwarded)}`}
               </li>

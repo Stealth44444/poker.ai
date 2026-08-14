@@ -13,7 +13,7 @@ import { Chair } from './Chair';
 import { DealtCard } from './DealtCard';
 import { ChipStack } from './ChipStack';
 import { AnimatedGroup } from './AnimatedGroup';
-import { PlayerPlate, TransientText } from './PlayerPlate';
+import { PlayerPlate, ActionBadge } from './PlayerPlate';
 
 const HUMAN_SEAT = 0;
 // Two avatar models alternated by seat for variety. sitting-2's fbx2gltf
@@ -35,8 +35,7 @@ const TABLE_CENTER: [number, number, number] = [0, TABLE_TOP_Y + 0.01, 0];
 
 export interface SeatAction {
   playerId: string;
-  badge: TransientText;
-  talk: TransientText | null;
+  badge: ActionBadge;
 }
 
 export interface Payout {
@@ -122,7 +121,6 @@ export function PokerScene({
                 isAllIn={p.isAllIn}
                 isWinner={winnerIds.includes(p.id)}
                 badge={seatAction?.playerId === p.id ? seatAction.badge : null}
-                talk={seatAction?.playerId === p.id ? seatAction.talk : null}
               />
             );
           })}

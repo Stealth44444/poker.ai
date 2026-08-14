@@ -1,6 +1,6 @@
 'use client';
 
-import { color, cutCorners, font } from './theme';
+import { color, cutCorners, font, hudZIndex } from './theme';
 
 /** Small non-blocking indicator shown while an action request is in flight —
  * without it, the multi-second (sometimes 60s+) wait for AI decisions to
@@ -13,6 +13,7 @@ export function ActionPending() {
         bottom: 28,
         left: '50%',
         transform: 'translateX(-50%)',
+        zIndex: hudZIndex,
         display: 'flex',
         alignItems: 'center',
         gap: 10,

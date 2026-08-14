@@ -156,11 +156,10 @@ export default function PlayPage() {
     ) ?? [];
 
   const seatAction: SeatAction | null =
-    latestEvent?.type === 'action' && latestEvent.playerId
+    latestEvent?.type === 'action' && latestEvent.playerId && latestEvent.action
       ? {
           playerId: latestEvent.playerId,
-          badge: { text: actionLabel(latestEvent), key: visibleCount },
-          talk: latestEvent.tableTalk ? { text: latestEvent.tableTalk, key: visibleCount } : null,
+          badge: { text: actionLabel(latestEvent), actionType: latestEvent.action, key: visibleCount },
         }
       : null;
 
