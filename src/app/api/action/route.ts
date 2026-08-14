@@ -8,7 +8,11 @@ import { PlayerAction, Player, ActionType } from '@/lib/poker/types';
 import { PERSONAS, Persona } from '@/lib/poker/personas';
 import { decideAction } from '@/lib/ai/decideAction';
 import { sanitizeStateForClient } from '@/lib/poker/sanitizeState';
+import { loadSession, saveSession } from '@/lib/poker/sessionStore';
 
+// In-memory cache for the hot path within a running process; sessionStore
+// persists the same data to disk so a game survives `next dev` restarts and
+// serverless cold starts instead of silently starting over on a cache miss.
 const sessions = new Map<string, TournamentState>();
 const HUMAN_ID = 'human';
 const PERSONAS_BY_ID: Record<string, Persona> = Object.fromEntries(PERSONAS.map((p) => [p.id, p]));
@@ -38,7 +42,7 @@ export async function POST(request: NextRequest) {
     const body: ActionRequestBody = await request.json().catch(() => ({}));
     const cookieStore = await cookies();
     let sessionId = cookieStore.get('sessionId')?.value;
-    let state = sessionId ? sessions.get(sessionId) : undefined;
+    let state = sessionId ? sessions.get(sessionId) ?? loadSession(sessionId) : undefined;
 
     if (!state) {
       sessionId = randomUUID();
@@ -54,6 +58,7 @@ export async function POST(request: NextRequest) {
     const events: HandEvent[] = result.events;
 
     sessions.set(finalSessionId, state);
+    saveSession(finalSessionId, state);
 
     const human = state.players.find((p) => p.id === HUMAN_ID);
     const humanValidActions: ActionType[] = human && !human.isFolded ? validActions(state, HUMAN_ID) : [];
