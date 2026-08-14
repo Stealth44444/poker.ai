@@ -9,6 +9,8 @@ export interface DecisionContext {
   toCall: number;
   minBetOrRaiseAmount: number;
   maxBetOrRaiseAmount: number;
+  /** The deciding player's own remaining stack (chips not yet committed this street). */
+  yourStack: number;
   stacks: Record<string, number>;
   actionHistory: string[];
   validActions: ActionType[];
@@ -65,12 +67,19 @@ export async function decideAction(
   const client = deps.client ?? getDefaultClient();
   const timeoutMs = deps.timeoutMs ?? 5000;
 
+  const opponentStacks = Object.entries(context.stacks)
+    .map(([id, stack]) => `${id}: ${stack}`)
+    .join(', ');
+
   const prompt = `You are ${persona.name}, a ${persona.style} poker player. ${persona.description}
 Hole cards: ${context.holeCards.join(' ')}
 Community cards: ${context.communityCards.join(' ') || '(none)'}
 Pot: ${context.pot}. Amount to call: ${context.toCall}.
+Your remaining stack: ${context.yourStack}.
+Stacks at the table: ${opponentStacks || '(unknown)'}.
+Action this hand so far: ${context.actionHistory.join('; ') || '(no actions yet)'}.
 Valid actions: ${context.validActions.join(', ')}.
-Pick one valid action. If betting or raising, "amount" must be the TOTAL chips you have in front of you this street (not just the extra chips added), and must be between ${context.minBetOrRaiseAmount} and ${context.maxBetOrRaiseAmount} inclusive.`;
+Pick one valid action that fits both your style and the situation — weigh your stack size, the pot, and what's already happened this hand. If multiple players have already raised each other this hand, only keep matching or reraising with a genuinely strong hand; otherwise call, or fold rather than escalate a losing spot. Going all-in should be a deliberate choice for a strong hand or a clear stack-pressure/pot-odds reason, not a reflexive default. If betting or raising, "amount" must be the TOTAL chips you have in front of you this street (not just the extra chips added), and must be between ${context.minBetOrRaiseAmount} and ${context.maxBetOrRaiseAmount} inclusive.`;
 
   try {
     const response = await Promise.race([

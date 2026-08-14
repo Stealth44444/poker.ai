@@ -170,6 +170,7 @@ export async function playUntilHumanOrHandEnd(
         toCall: state.currentBet - committed,
         minBetOrRaiseAmount,
         maxBetOrRaiseAmount,
+        yourStack: player.stack,
         stacks: Object.fromEntries(state.players.map((p) => [p.id, p.stack])),
         actionHistory: events
           .filter((e) => e.type === 'action')
