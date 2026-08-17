@@ -3,6 +3,17 @@ import { createDeck, shuffle, draw } from './deck';
 import { determineWinners } from './handEvaluator';
 import { calculateSidePots, Pot } from './sidePots';
 
+export interface PlayerStats {
+  actions: number;
+  raises: number;
+  folds: number;
+  allIns: number;
+}
+
+function zeroPlayerStats(): PlayerStats {
+  return { actions: 0, raises: 0, folds: 0, allIns: 0 };
+}
+
 export interface TournamentState {
   players: Player[];
   deck: Card[];
@@ -18,6 +29,7 @@ export interface TournamentState {
   minRaise: number;
   actedThisRound: string[];
   actionAnchorSeat: number;
+  playerStats: Record<string, PlayerStats>;
 }
 
 export function createTournament(players: Player[], startingSmallBlind = 25, handsPerBlindLevel = 10): TournamentState {
@@ -36,6 +48,7 @@ export function createTournament(players: Player[], startingSmallBlind = 25, han
     minRaise: startingSmallBlind * 2,
     actedThisRound: [],
     actionAnchorSeat: 0,
+    playerStats: Object.fromEntries(players.map((p) => [p.id, zeroPlayerStats()])),
   };
 }
 

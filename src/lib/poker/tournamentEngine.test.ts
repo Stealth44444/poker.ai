@@ -87,6 +87,27 @@ describe('resolveShowdown', () => {
   });
 });
 
+describe('playerStats', () => {
+  it('initializes zeroed stats for every player', () => {
+    const tournament = createTournament(makePlayers(3));
+    expect(tournament.playerStats).toEqual({
+      p0: { actions: 0, raises: 0, folds: 0, allIns: 0 },
+      p1: { actions: 0, raises: 0, folds: 0, allIns: 0 },
+      p2: { actions: 0, raises: 0, folds: 0, allIns: 0 },
+    });
+  });
+
+  it('is left untouched by startHand', () => {
+    let tournament = createTournament(makePlayers(2));
+    tournament = {
+      ...tournament,
+      playerStats: { ...tournament.playerStats, p0: { actions: 3, raises: 1, folds: 0, allIns: 0 } },
+    };
+    tournament = startHand(tournament);
+    expect(tournament.playerStats.p0).toEqual({ actions: 3, raises: 1, folds: 0, allIns: 0 });
+  });
+});
+
 describe('tournament end detection', () => {
   it('is not over with multiple players holding chips', () => {
     expect(isTournamentOver(createTournament(makePlayers(3)))).toBe(false);
