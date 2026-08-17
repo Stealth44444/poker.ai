@@ -12,6 +12,7 @@ const POSITION_LAMBDA = 6;
 const FLIP_LAMBDA = 7;
 const POSITION_EPSILON = 0.0005;
 const ANGLE_EPSILON = 0.002;
+const GLINT_HALF_WINDOW = 0.35;
 
 /**
  * Wraps Card3D with a deal-in slide (eased from `origin` toward `position`)
@@ -45,6 +46,7 @@ export function DealtCard({
   const lastPosition = useRef(position);
   const currentAngle = useRef(faceDown ? FACE_DOWN_ANGLE : FACE_UP_ANGLE);
   const rotSettled = useRef(true);
+  const glintMaterial = useRef<THREE.MeshBasicMaterial>(null);
 
   useFrame((_, delta) => {
     const pg = posGroup.current;
@@ -82,10 +84,15 @@ export function DealtCard({
       if (!rotSettled.current) {
         currentAngle.current = THREE.MathUtils.damp(currentAngle.current, targetAngle, FLIP_LAMBDA, delta);
         rg.rotation.x = currentAngle.current;
+        const gm = glintMaterial.current;
+        if (gm) gm.opacity = Math.max(0, 1 - Math.abs(currentAngle.current) / GLINT_HALF_WINDOW);
         if (Math.abs(currentAngle.current - targetAngle) < ANGLE_EPSILON) {
           currentAngle.current = targetAngle;
           rg.rotation.x = targetAngle;
           rotSettled.current = true;
+          // Settled cards sit face-down or face-up, well outside the glint
+          // window — clear it explicitly rather than leaving a stale value.
+          if (gm) gm.opacity = 0;
         }
       }
     }
@@ -95,6 +102,17 @@ export function DealtCard({
     <group ref={posGroup} rotation={[0, rotationY, 0]}>
       <group ref={rotGroup} scale={scale}>
         <Card3D card={card} position={[0, 0, 0]} flat={false} />
+        <mesh position={[0, 0, 0.001]}>
+          <planeGeometry args={[0.08, 0.12]} />
+          <meshBasicMaterial
+            ref={glintMaterial}
+            color="#ffffff"
+            transparent
+            opacity={0}
+            depthWrite={false}
+            toneMapped={false}
+          />
+        </mesh>
       </group>
     </group>
   );
