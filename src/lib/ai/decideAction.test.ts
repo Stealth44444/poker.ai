@@ -4,6 +4,13 @@ import { Persona } from '../poker/personas';
 
 const persona: Persona = { id: 'ai1', name: 'Ace', style: 'aggressive', description: 'Bets big and often.' };
 
+const baseStrategyContext = {
+  handStrengthHint: 'weak',
+  potOddsPercent: 0,
+  position: 'button',
+  opponentReads: '',
+};
+
 function makeClient(content: string | null): ChatClient {
   return {
     chat: {
@@ -18,7 +25,7 @@ describe('decideAction', () => {
   it('returns the parsed decision when the model responds with a valid action', async () => {
     const client = makeClient(JSON.stringify({ action: 'call', amount: null }));
     const decision = await decideAction(
-      { holeCards: ['Ad', 'Kd'], communityCards: [], pot: 100, toCall: 20, minBetOrRaiseAmount: 40, maxBetOrRaiseAmount: 1000, yourStack: 1000, stacks: {}, actionHistory: [], validActions: ['fold', 'call', 'raise', 'all-in'] },
+      { holeCards: ['Ad', 'Kd'], communityCards: [], pot: 100, toCall: 20, minBetOrRaiseAmount: 40, maxBetOrRaiseAmount: 1000, yourStack: 1000, stacks: {}, actionHistory: [], validActions: ['fold', 'call', 'raise', 'all-in'], ...baseStrategyContext },
       persona,
       { client }
     );
@@ -28,7 +35,7 @@ describe('decideAction', () => {
   it('falls back to a safe action when the model returns an illegal action', async () => {
     const client = makeClient(JSON.stringify({ action: 'raise', amount: 50 }));
     const decision = await decideAction(
-      { holeCards: ['2c', '7h'], communityCards: [], pot: 100, toCall: 0, minBetOrRaiseAmount: 20, maxBetOrRaiseAmount: 1000, yourStack: 1000, stacks: {}, actionHistory: [], validActions: ['fold', 'check', 'bet', 'all-in'] },
+      { holeCards: ['2c', '7h'], communityCards: [], pot: 100, toCall: 0, minBetOrRaiseAmount: 20, maxBetOrRaiseAmount: 1000, yourStack: 1000, stacks: {}, actionHistory: [], validActions: ['fold', 'check', 'bet', 'all-in'], ...baseStrategyContext },
       persona,
       { client }
     );
@@ -38,7 +45,7 @@ describe('decideAction', () => {
   it('falls back when the model raises for more than the max allowed amount', async () => {
     const client = makeClient(JSON.stringify({ action: 'raise', amount: 5000 }));
     const decision = await decideAction(
-      { holeCards: ['Ad', 'Kd'], communityCards: [], pot: 100, toCall: 0, minBetOrRaiseAmount: 20, maxBetOrRaiseAmount: 1000, yourStack: 1000, stacks: {}, actionHistory: [], validActions: ['fold', 'check', 'raise', 'all-in'] },
+      { holeCards: ['Ad', 'Kd'], communityCards: [], pot: 100, toCall: 0, minBetOrRaiseAmount: 20, maxBetOrRaiseAmount: 1000, yourStack: 1000, stacks: {}, actionHistory: [], validActions: ['fold', 'check', 'raise', 'all-in'], ...baseStrategyContext },
       persona,
       { client }
     );
@@ -48,7 +55,7 @@ describe('decideAction', () => {
   it('falls back when the model raises below the minimum allowed amount', async () => {
     const client = makeClient(JSON.stringify({ action: 'raise', amount: 5 }));
     const decision = await decideAction(
-      { holeCards: ['Ad', 'Kd'], communityCards: [], pot: 100, toCall: 0, minBetOrRaiseAmount: 20, maxBetOrRaiseAmount: 1000, yourStack: 1000, stacks: {}, actionHistory: [], validActions: ['fold', 'check', 'raise', 'all-in'] },
+      { holeCards: ['Ad', 'Kd'], communityCards: [], pot: 100, toCall: 0, minBetOrRaiseAmount: 20, maxBetOrRaiseAmount: 1000, yourStack: 1000, stacks: {}, actionHistory: [], validActions: ['fold', 'check', 'raise', 'all-in'], ...baseStrategyContext },
       persona,
       { client }
     );
@@ -58,7 +65,7 @@ describe('decideAction', () => {
   it('falls back when the model raises without providing a positive amount', async () => {
     const client = makeClient(JSON.stringify({ action: 'raise', amount: null }));
     const decision = await decideAction(
-      { holeCards: ['Ad', 'Kd'], communityCards: [], pot: 100, toCall: 0, minBetOrRaiseAmount: 20, maxBetOrRaiseAmount: 1000, yourStack: 1000, stacks: {}, actionHistory: [], validActions: ['fold', 'check', 'raise', 'all-in'] },
+      { holeCards: ['Ad', 'Kd'], communityCards: [], pot: 100, toCall: 0, minBetOrRaiseAmount: 20, maxBetOrRaiseAmount: 1000, yourStack: 1000, stacks: {}, actionHistory: [], validActions: ['fold', 'check', 'raise', 'all-in'], ...baseStrategyContext },
       persona,
       { client }
     );
@@ -68,7 +75,7 @@ describe('decideAction', () => {
   it('falls back to fold when check is not available and the API errors', async () => {
     const client: ChatClient = { chat: { completions: { create: vi.fn().mockRejectedValue(new Error('network down')) } } };
     const decision = await decideAction(
-      { holeCards: ['2c', '7h'], communityCards: [], pot: 100, toCall: 50, minBetOrRaiseAmount: 100, maxBetOrRaiseAmount: 1000, yourStack: 1000, stacks: {}, actionHistory: [], validActions: ['fold', 'call', 'raise', 'all-in'] },
+      { holeCards: ['2c', '7h'], communityCards: [], pot: 100, toCall: 50, minBetOrRaiseAmount: 100, maxBetOrRaiseAmount: 1000, yourStack: 1000, stacks: {}, actionHistory: [], validActions: ['fold', 'call', 'raise', 'all-in'], ...baseStrategyContext },
       persona,
       { client }
     );
@@ -84,7 +91,7 @@ describe('decideAction', () => {
       },
     };
     const decision = await decideAction(
-      { holeCards: ['2c', '7h'], communityCards: [], pot: 100, toCall: 0, minBetOrRaiseAmount: 20, maxBetOrRaiseAmount: 1000, yourStack: 1000, stacks: {}, actionHistory: [], validActions: ['fold', 'check', 'bet', 'all-in'] },
+      { holeCards: ['2c', '7h'], communityCards: [], pot: 100, toCall: 0, minBetOrRaiseAmount: 20, maxBetOrRaiseAmount: 1000, yourStack: 1000, stacks: {}, actionHistory: [], validActions: ['fold', 'check', 'bet', 'all-in'], ...baseStrategyContext },
       persona,
       { client, timeoutMs: 20 }
     );
@@ -107,7 +114,7 @@ describe('decideAction', () => {
       },
     };
     await decideAction(
-      { holeCards: ['Ad', 'Kd'], communityCards: [], pot: 100, toCall: 0, minBetOrRaiseAmount: 300, maxBetOrRaiseAmount: 9000, yourStack: 8700, stacks: {}, actionHistory: [], validActions: ['check', 'bet', 'fold'] },
+      { holeCards: ['Ad', 'Kd'], communityCards: [], pot: 100, toCall: 0, minBetOrRaiseAmount: 300, maxBetOrRaiseAmount: 9000, yourStack: 8700, stacks: {}, actionHistory: [], validActions: ['check', 'bet', 'fold'], ...baseStrategyContext },
       persona,
       { client }
     );
@@ -133,7 +140,7 @@ describe('decideAction', () => {
     await decideAction(
       {
         holeCards: ['Ad', 'Kd'], communityCards: [], pot: 100, toCall: 0, minBetOrRaiseAmount: 20, maxBetOrRaiseAmount: 8700,
-        yourStack: 8700, stacks: { ai1: 8700, ai2: 4300 }, actionHistory: [], validActions: ['check', 'bet', 'fold'],
+        yourStack: 8700, stacks: { ai1: 8700, ai2: 4300 }, actionHistory: [], validActions: ['check', 'bet', 'fold'], ...baseStrategyContext,
       },
       persona,
       { client }
@@ -160,12 +167,42 @@ describe('decideAction', () => {
     await decideAction(
       {
         holeCards: ['Ad', 'Kd'], communityCards: [], pot: 100, toCall: 0, minBetOrRaiseAmount: 20, maxBetOrRaiseAmount: 8700,
-        yourStack: 8700, stacks: {}, actionHistory: ['ai2 raise 300', 'ai3 fold'], validActions: ['check', 'bet', 'fold'],
+        yourStack: 8700, stacks: {}, actionHistory: ['ai2 raise 300', 'ai3 fold'], validActions: ['check', 'bet', 'fold'], ...baseStrategyContext,
       },
       persona,
       { client }
     );
     expect(capturedPrompt).toContain('ai2 raise 300');
     expect(capturedPrompt).toContain('ai3 fold');
+  });
+
+  it('tells the model its hand-strength read, pot odds, position, and opponent reads', async () => {
+    let capturedPrompt = '';
+    const client: ChatClient = {
+      chat: {
+        completions: {
+          create: vi.fn((params: Record<string, unknown>) => {
+            const messages = params.messages as { content: string }[];
+            capturedPrompt = messages[0].content;
+            return Promise.resolve({
+              choices: [{ message: { content: JSON.stringify({ action: 'check', amount: null }) } }],
+            });
+          }),
+        },
+      },
+    };
+    await decideAction(
+      {
+        holeCards: ['Ad', 'Kd'], communityCards: [], pot: 100, toCall: 0, minBetOrRaiseAmount: 20, maxBetOrRaiseAmount: 8700,
+        yourStack: 8700, stacks: {}, actionHistory: [], validActions: ['check', 'bet', 'fold'],
+        handStrengthHint: 'premium', potOddsPercent: 33, position: 'late', opponentReads: 'Ace: aggressive; Rocky: tight',
+      },
+      persona,
+      { client }
+    );
+    expect(capturedPrompt).toContain('premium');
+    expect(capturedPrompt).toContain('33');
+    expect(capturedPrompt).toContain('late');
+    expect(capturedPrompt).toContain('Ace: aggressive; Rocky: tight');
   });
 });

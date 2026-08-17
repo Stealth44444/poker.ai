@@ -14,6 +14,12 @@ export interface DecisionContext {
   stacks: Record<string, number>;
   actionHistory: string[];
   validActions: ActionType[];
+  /** Preflop tier label (e.g. "premium") or postflop made-hand name (e.g. "Two Pair"). */
+  handStrengthHint: string;
+  potOddsPercent: number;
+  position: string;
+  /** e.g. "Ace: aggressive; Rocky: tight" — other active players only, empty string if none tracked yet. */
+  opponentReads: string;
 }
 
 export interface Decision {
@@ -76,6 +82,7 @@ Pot: ${context.pot}. Amount to call: ${context.toCall}.
 Your remaining stack: ${context.yourStack}.
 Stacks at the table: ${opponentStacks || '(unknown)'}.
 Action this hand so far: ${context.actionHistory.join('; ') || '(no actions yet)'}.
+Your hand-strength read: ${context.handStrengthHint}. Pot odds to call: ${context.potOddsPercent}%. Your position: ${context.position}.${context.opponentReads ? ` Opponent reads — ${context.opponentReads}.` : ''}
 Valid actions: ${context.validActions.join(', ')}.
 Pick one valid action that fits both your style and the situation — weigh your stack size, the pot, and what's already happened this hand. If multiple players have already raised each other this hand, only keep matching or reraising with a genuinely strong hand; otherwise call, or fold rather than escalate a losing spot. Going all-in should be a deliberate choice for a strong hand or a clear stack-pressure/pot-odds reason, not a reflexive default. If betting or raising, "amount" must be the TOTAL chips you have in front of you this street (not just the extra chips added), and must be between ${context.minBetOrRaiseAmount} and ${context.maxBetOrRaiseAmount} inclusive.`;
 
