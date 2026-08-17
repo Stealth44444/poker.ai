@@ -3,6 +3,9 @@ import { applyAction, validActions } from './bettingEngine';
 import { ActionType, Card, PlayerAction, Street } from './types';
 import { Persona } from './personas';
 import { DecisionContext, Decision } from '../ai/decideAction';
+import { preflopStrength, madeHandRank, potOddsPercent } from '../ai/handStrength';
+import { classifyPosition } from '../ai/position';
+import { describeTendency } from '../ai/tendency';
 
 export function nextActiveSeatAfter(state: TournamentState, fromSeat: number): string | null {
   const n = state.players.length;
@@ -89,6 +92,19 @@ export interface HandEvent {
   snapshot?: EventSnapshot;
 }
 
+function incrementPlayerStats(
+  stats: TournamentState['playerStats'],
+  playerId: string,
+  actionType: ActionType
+): TournamentState['playerStats'] {
+  const current = stats[playerId];
+  const next = { ...current, actions: current.actions + 1 };
+  if (actionType === 'fold') next.folds += 1;
+  else if (actionType === 'bet' || actionType === 'raise') next.raises += 1;
+  else if (actionType === 'all-in') next.allIns += 1;
+  return { ...stats, [playerId]: next };
+}
+
 export type DecisionFn = (context: DecisionContext, persona: Persona) => Promise<Decision>;
 
 export async function playUntilHumanOrHandEnd(
@@ -120,6 +136,7 @@ export async function playUntilHumanOrHandEnd(
       minRaise: result.minRaise,
       bets: result.bets,
       actedThisRound: [...state.actedThisRound, finalAction.playerId],
+      playerStats: incrementPlayerStats(state.playerStats, finalAction.playerId, finalAction.type),
     };
     events.push({ type: 'action', playerId: finalAction.playerId, action: finalAction.type, amount: finalAction.amount, isFallback: fellBack, snapshot: takeSnapshot(state) });
   };
@@ -159,14 +176,25 @@ export async function playUntilHumanOrHandEnd(
     const persona = personasById[nextId];
     const pot = Object.values(state.bets).reduce((sum, b) => sum + b, 0);
     const committed = state.bets[nextId] ?? 0;
+    const toCall = state.currentBet - committed;
     const minBetOrRaiseAmount = state.currentBet === 0 ? state.minRaise : state.currentBet + state.minRaise;
     const maxBetOrRaiseAmount = committed + player.stack;
+    const madeRank = madeHandRank(player.holeCards, state.communityCards);
+    const handStrengthHint = madeRank ?? preflopStrength(player.holeCards).tier;
+    const opponentReads = state.players
+      .filter((p) => p.id !== nextId && !p.isFolded)
+      .map((p) => {
+        const tendency = describeTendency(state.playerStats[p.id]);
+        return tendency ? `${p.name}: ${tendency}` : null;
+      })
+      .filter((entry): entry is string => entry !== null)
+      .join('; ');
     const decision = await decisionFn(
       {
         holeCards: player.holeCards,
         communityCards: state.communityCards,
         pot,
-        toCall: state.currentBet - committed,
+        toCall,
         minBetOrRaiseAmount,
         maxBetOrRaiseAmount,
         yourStack: player.stack,
@@ -175,6 +203,10 @@ export async function playUntilHumanOrHandEnd(
           .filter((e) => e.type === 'action')
           .map((e) => `${e.playerId} ${e.action}${e.amount ? ' ' + e.amount : ''}`),
         validActions: validActions(state, nextId),
+        handStrengthHint,
+        potOddsPercent: potOddsPercent(toCall, pot),
+        position: classifyPosition(player.seat, state.dealerSeat, state.players.length),
+        opponentReads,
       },
       persona
     );

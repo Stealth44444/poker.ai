@@ -141,4 +141,35 @@ describe('playUntilHumanOrHandEnd', () => {
     // p1 posted 50, wins the 75 pot: 1000 - 50 + 75
     expect(showdown.snapshot!.players.find((p) => p.id === 'p1')!.stack).toBe(1025);
   });
+
+  it('accumulates playerStats for every action taken during the hand', async () => {
+    const state = postBlinds(startHand(createTournament(makePlayers(2, 1000), 25)));
+    const { state: after } = await playUntilHumanOrHandEnd(
+      state, 'p0', { p1: persona }, alwaysCheckOrCall, { playerId: 'p0', type: 'call' }
+    );
+    // p0's initial call is the only action recorded for the human; the AI
+    // (p1) acts once on the preflop round and once more after the flop —
+    // matches the ['action', 'action', 'street', 'action'] event sequence
+    // from the playback test above.
+    expect(after.playerStats.p0.actions).toBe(1);
+    expect(after.playerStats.p1.actions).toBe(2);
+  });
+
+  it('passes hand-strength, pot-odds, position, and opponent-read context to the decision function', async () => {
+    const state = postBlinds(startHand(createTournament(makePlayers(3, 1000), 25)));
+    let capturedContext: Parameters<DecisionFn>[0] | null = null;
+    const capturingDecisionFn: DecisionFn = async (context) => {
+      if (!capturedContext) capturedContext = context;
+      if (context.validActions.includes('check')) return { action: 'check' };
+      return { action: 'call' };
+    };
+    await playUntilHumanOrHandEnd(
+      state, 'p0', { p1: persona, p2: persona }, capturingDecisionFn, { playerId: 'p0', type: 'fold' }
+    );
+    expect(capturedContext).not.toBeNull();
+    expect(typeof capturedContext!.handStrengthHint).toBe('string');
+    expect(typeof capturedContext!.potOddsPercent).toBe('number');
+    expect(['button', 'smallBlind', 'bigBlind', 'early', 'middle', 'late']).toContain(capturedContext!.position);
+    expect(typeof capturedContext!.opponentReads).toBe('string');
+  });
 });
