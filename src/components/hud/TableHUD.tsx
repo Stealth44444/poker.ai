@@ -17,6 +17,7 @@ export function TableHUD({
   handNumber,
   smallBlind,
   bigBlind,
+  handsPerBlindLevel,
   communityCards,
 }: {
   pot: number;
@@ -24,9 +25,11 @@ export function TableHUD({
   handNumber: number;
   smallBlind: number;
   bigBlind: number;
+  handsPerBlindLevel: number;
   communityCards: Card[];
 }) {
   const slots = Array.from({ length: BOARD_SLOTS }, (_, i) => communityCards[i] ?? null);
+  const handsUntilBlindIncrease = handsPerBlindLevel - ((handNumber - 1) % handsPerBlindLevel);
 
   return (
     <div style={{ position: 'absolute', top: 18, left: '50%', transform: 'translateX(-50%)', zIndex: hudZIndex, pointerEvents: 'none' }}>
@@ -55,6 +58,7 @@ export function TableHUD({
                 BLINDS {smallBlind}/{bigBlind}
               </span>
               <span>HAND #{handNumber}</span>
+              <span>BLIND UP IN {handsUntilBlindIncrease}</span>
             </div>
           </div>
           <div style={{ display: 'flex', gap: 6 }}>

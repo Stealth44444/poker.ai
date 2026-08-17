@@ -208,6 +208,7 @@ export default function PlayPage() {
         handNumber={state.handNumber}
         smallBlind={state.smallBlind}
         bigBlind={state.bigBlind}
+        handsPerBlindLevel={state.handsPerBlindLevel}
         communityCards={view.communityCards}
       />
       {human && <HoleCardsHUD cards={human.holeCards} />}
