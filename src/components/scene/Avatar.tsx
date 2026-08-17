@@ -51,3 +51,8 @@ useGLTF.preload('/avatars/sitting-idle.glb');
 useGLTF.preload('/avatars/sitting-2.glb');
 useGLTF.preload('/avatars/sitting-3.glb');
 useGLTF.preload('/avatars/sitting-4.glb');
+useGLTF.preload('/avatars/sitting-5.glb');
+useGLTF.preload('/avatars/sitting-6.glb');
+useGLTF.preload('/avatars/sitting-7.glb');
+useGLTF.preload('/avatars/sitting-8.glb');
+useGLTF.preload('/avatars/sitting-9.glb');
