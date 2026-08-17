@@ -14,6 +14,7 @@ import { DealtCard } from './DealtCard';
 import { ChipStack } from './ChipStack';
 import { AnimatedGroup } from './AnimatedGroup';
 import { PlayerPlate, ActionBadge } from './PlayerPlate';
+import { DealerButton } from './DealerButton';
 
 const HUMAN_SEAT = 0;
 // Avatar models alternated by seat for variety. sitting-2's fbx2gltf
@@ -100,6 +101,22 @@ export function PokerScene({
       <Suspense fallback={null}>
         <Room />
         <Table />
+        {(() => {
+          // Same seat placed on the felt just beside the dealer's hole
+          // cards — a physical version of the "D" badge PlayerPlate already
+          // shows, not new state.
+          const angle = (dealerSeat / players.length) * Math.PI * 2;
+          const dx = Math.sin(angle) * HOLE_CARD_RX;
+          const dz = Math.cos(angle) * HOLE_CARD_RZ;
+          const tx = Math.cos(angle);
+          const tz = -Math.sin(angle);
+          const buttonOffset = 0.16;
+          return (
+            <DealerButton
+              position={[dx + tx * buttonOffset, TABLE_TOP_Y + 0.006, dz + tz * buttonOffset]}
+            />
+          );
+        })()}
         {players
           .filter((p) => p.seat !== HUMAN_SEAT)
           .map((p) => {
