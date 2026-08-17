@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { PokerScene, Payout, SeatAction } from '@/components/scene/PokerScene';
 import { HoleCardsHUD } from '@/components/scene/HoleCardsHUD';
 import { TableHUD } from '@/components/hud/TableHUD';
+import { StackLeaderboard } from '@/components/hud/StackLeaderboard';
 import { BetControls } from '@/components/hud/BetControls';
 import { WinnerBanner } from '@/components/hud/WinnerBanner';
 import { LoadingScreen } from '@/components/hud/LoadingScreen';
@@ -211,6 +212,7 @@ export default function PlayPage() {
         handsPerBlindLevel={state.handsPerBlindLevel}
         communityCards={view.communityCards}
       />
+      <StackLeaderboard players={state.players} humanId={HUMAN_ID} />
       {human && <HoleCardsHUD cards={human.holeCards} />}
       {isHumanTurn && human && !submitting && (
         <BetControls
